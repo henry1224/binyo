@@ -25,17 +25,19 @@ Dashboard tidak menampilkan grafik yang tidak menghasilkan tindakan.
 
 - Daftar transaksi.
 - Detail transaksi dan pembayaran.
+- Shift dan pergerakan kas.
 - Void dan refund.
-- Shift kasir.
-- Pergerakan kas.
+- Pelanggan.
+- Rekonsiliasi pembayaran non-tunai.
 
 ### Produk
 
 - Produk dan varian/SKU.
 - Kategori.
 - Modifier.
-- Harga dan pajak.
-- Resep/komponen bila dipakai.
+- Harga per outlet.
+- Resep dan HPP bila dipakai.
+- Promo sederhana.
 - Impor dan ekspor katalog.
 
 Merek dan atribut tidak menjadi menu terpisah pada MVP. Keduanya ditambahkan hanya jika pencarian dan pelaporan benar-benar membutuhkannya.
@@ -49,23 +51,10 @@ Merek dan atribut tidak menjadi menu terpisah pada MVP. Keduanya ditambahkan han
 - Stok opname.
 - Penyesuaian dan alasan.
 - Peringatan stok rendah.
-
-`Stok masuk`, `stok keluar`, dan `stock adjustment` memakai satu model pergerakan. UI memberi jenis tindakan berbeda tanpa membuat tiga konsep data yang tumpang tindih.
-
-### Pembelian
-
 - Pemasok.
-- Purchase order.
-- Penerimaan barang.
-- Pembelian belum lengkap.
+- Pembelian dan penerimaan barang.
 
-### Pelanggan
-
-- Daftar pelanggan.
-- Riwayat pembelian.
-- Catatan internal terbatas.
-
-Loyalty dan kupon ditunda.
+`Stok masuk`, `stok keluar`, dan `stock adjustment` memakai satu model pergerakan. Purchase order dan penerimaan memakai satu dokumen dengan status bertahap. Transfer order, surat jalan, dan penerimaan transfer juga tampil sebagai satu alur.
 
 ### Laporan
 
@@ -75,16 +64,17 @@ Loyalty dan kupon ditunda.
 - Kasir dan shift.
 - Stok.
 - Pembelian.
-- Laba kotor perkiraan.
+- HPP dan laba kotor perkiraan.
+- Pajak dan service charge.
 
 Semua laporan memakai pola sama: rentang tanggal, outlet, filter terkait, ringkasan, tabel, lalu ekspor CSV.
 
-### Tim & Outlet
+### Operasional
 
 - Outlet.
-- Pengguna/staf.
-- Peran dan izin.
+- Staff dan akses.
 - Perangkat POS.
+- Log aktivitas.
 
 ### Pengaturan
 
@@ -96,7 +86,39 @@ Semua laporan memakai pola sama: rentang tanggal, outlet, filter terkait, ringka
 - Integrasi.
 - Impor/ekspor data.
 
-## 2. Penyederhanaan dari Vireo
+Loyalty, kupon, komisi, waralaba, dan marketing automation ditunda.
+
+## 2. Struktur halaman
+
+### Pola umum
+
+- Header: judul, outlet aktif, dan satu aksi utama.
+- Filter: pencarian, status, outlet, dan periode yang relevan.
+- Ringkasan: hanya metrik yang dapat ditindaklanjuti.
+- Isi: tabel atau form utama.
+- Panel detail: histori, audit, atau informasi lanjutan tanpa pindah konteks.
+
+### Laporan
+
+Binyo tidak membuat menu terpisah untuk setiap dimensi laporan. Satu laporan penjualan dapat dikelompokkan berdasarkan produk, kategori, outlet, kasir, metode pembayaran, perangkat, hari, atau channel.
+
+### Persediaan
+
+- `Stok`: posisi dan histori per item.
+- `Pembelian`: draft, dipesan, diterima sebagian, dan selesai.
+- `Transfer`: draft, dikirim, diterima sebagian, dan selesai.
+- `Opname & Penyesuaian`: perhitungan fisik, selisih, alasan, dan posting.
+- `Pemasok`: identitas dan histori pembelian.
+
+### Penjualan
+
+- `Transaksi`: daftar dan detail transaksi.
+- `Shift & Kas`: buka/tutup shift, kas masuk/keluar, dan selisih.
+- `Refund & Void`: koreksi dengan alasan dan persetujuan.
+- `Pelanggan`: data minimum dan riwayat berizin.
+- `Rekonsiliasi Pembayaran`: cocokkan nominal POS dengan settlement penyedia.
+
+## 3. Penyederhanaan dari Vireo
 
 | Vireo | Binyo MVP | Keputusan |
 |---|---|---|
@@ -109,14 +131,17 @@ Semua laporan memakai pola sama: rentang tanggal, outlet, filter terkait, ringka
 | PO dan penerimaan | Pembelian | Satu alur dari pesan sampai terima |
 | Stok masuk/keluar/adjustment | Persediaan > Pergerakan | Satu ledger, beberapa jenis transaksi |
 | Transfer order/surat jalan/penerimaan | Transfer stok | Satu alur bertahap; detail dokumen muncul bila dibutuhkan |
+| Laporan per kategori/produk/outlet/staff/channel | Laporan dengan pilihan pengelompokan | Satu halaman, banyak sudut pandang |
 | Proses komisi/deposito/poin | Tidak ada | Ditunda |
 | Produksi/bongkar produksi | Resep/produksi | Ditunda kecuali pilot membutuhkannya |
 | Akun buku besar/jurnal | Ekspor akunting | General ledger bukan MVP |
-| Grup akses | Tim & Outlet > Peran | Nama lebih mudah dipahami |
+| Grup akses | Operasional > Staff & Akses | Nama lebih mudah dipahami |
 | Waralaba | Tidak ada | Ditunda |
 | Grab/GoBiz | Pengaturan > Integrasi | Ditunda |
 
-## 3. Matriks akses awal
+Audit lengkap: [`../references/vireo-menu-audit.md`](../references/vireo-menu-audit.md).
+
+## 4. Matriks akses awal
 
 | Kemampuan | Pemilik | Manajer | Kasir | Gudang |
 |---|---:|---:|---:|---:|
@@ -130,10 +155,11 @@ Semua laporan memakai pola sama: rentang tanggal, outlet, filter terkait, ringka
 | Koreksi stok | Ya | Ya | Tidak | Sesuai izin |
 | Melihat laba | Ya | Opsional | Tidak | Tidak |
 | Mengelola pengguna | Ya | Opsional | Tidak | Tidak |
+| Melihat log aktivitas | Ya | Sesuai akses | Tidak | Opsional |
 
 Hak akses disimpan per kemampuan, bukan hanya nama peran. Nama peran di atas adalah preset.
 
-## 4. Arah visual
+## 5. Arah visual
 
 Tema: `operational calm` - data padat, kontras jelas, gangguan rendah.
 
@@ -165,17 +191,26 @@ Tipografi:
 | Penjualan      |------------------------------------------------------|
 | Produk         | Filter dan ringkasan                                |
 | Persediaan     |------------------------------------------------------|
-| Pembelian      | Tabel/isi utama                                     |
-| Pelanggan      |                                                      |
 | Laporan        |                                                      |
-| Tim & Outlet   |                                                      |
+| Operasional    |                                                      |
 | Pengaturan     |                                                      |
 +----------------+------------------------------------------------------+
 ```
 
 Elemen khas Binyo adalah `operational rail`: bar tipis yang selalu menunjukkan outlet aktif, shift terbuka, perangkat, koneksi, dan status sinkronisasi. Elemen ini informatif, bukan dekorasi.
 
-## 5. Keadaan wajib setiap halaman
+## 6. Aturan interaksi
+
+- Maksimal tujuh menu utama.
+- Satu tindakan utama memakai tombol paling menonjol.
+- Aksi lanjutan berada pada menu konteks, bukan memenuhi toolbar.
+- Status memakai bahasa pengguna, bukan kode internal.
+- Field lanjutan muncul setelah fitur terkait diaktifkan.
+- Tabel mengingat filter dan kolom pengguna.
+- Aksi berisiko menjelaskan dampak sebelum konfirmasi.
+- Target sentuh minimum 44 x 44 px tetap berlaku pada tablet.
+
+## 7. Keadaan wajib setiap halaman
 
 - Memuat.
 - Kosong dengan tindakan berikutnya.

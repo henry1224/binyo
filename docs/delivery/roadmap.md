@@ -46,6 +46,7 @@ Selesai bila satu hari operasional dapat dijalankan online dari buka sampai tutu
 - [ ] Ledger stok dan saldo per outlet.
 - [ ] Pengurangan stok dari penjualan dan resep.
 - [ ] Pemasok, PO, dan penerimaan sebagian.
+- [ ] Konversi satuan beli ke base unit dan HPP rata-rata bergerak.
 - [ ] Opname, adjustment, transfer, dan stok rendah.
 - [ ] Rekonsiliasi ledger dan saldo.
 
@@ -66,6 +67,7 @@ Selesai bila penjualan offline tersinkron tanpa duplikasi atau kehilangan data.
 - [ ] Dashboard tindakan harian.
 - [ ] Laporan penjualan, pembayaran, produk, stok, pembelian, dan shift.
 - [ ] Laba kotor perkiraan dengan penjelasan sumber biaya.
+- [ ] Rekonsiliasi pembayaran non-tunai manual.
 - [ ] Ekspor CSV.
 - [ ] UAT, pelatihan singkat, SOP gangguan, dan checklist go-live.
 - [ ] Pilot terbatas dan evaluasi masalah nyata.

@@ -81,6 +81,8 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 - Modifier dapat wajib atau opsional dan dapat menambah harga.
 - Produk dapat dibatasi untuk outlet tertentu.
 - Produk resep dapat mengurangi beberapa bahan baku ketika terjual.
+- SKU memiliki satu base unit dan dapat memiliki satuan beli dengan faktor konversi tersimpan.
+- HPP saat transaksi selesai disimpan sebagai snapshot dan tidak berubah karena penerimaan berikutnya.
 
 ### Penjualan
 
@@ -95,6 +97,7 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 - MVP mencatat tunai dan metode non-tunai manual.
 - Kembalian dihitung hanya untuk tunai.
 - Pembayaran gagal atau belum terkonfirmasi tidak boleh menyelesaikan transaksi.
+- Metode non-tunai manual dapat mewajibkan referensi dan direkonsiliasi dengan settlement penyedia.
 - Binyo tidak menyimpan data kartu.
 - Integrasi QRIS dinamis memakai penyedia pembayaran pada fase terpisah.
 
@@ -104,6 +107,7 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 - Kas masuk/keluar non-penjualan wajib memiliki kategori, nominal, dan catatan.
 - Penutupan shift membandingkan kas sistem dan kas fisik.
 - Selisih kas disimpan, bukan ditimpa.
+- Penutupan offline baru final di server setelah seluruh transaksi perangkat sampai urutan penutupan diterima.
 
 ### Persediaan
 
@@ -115,9 +119,11 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 
 ### Pembelian
 
-- Purchase order memiliki status draft, dikirim, diterima sebagian, selesai, atau dibatalkan.
+- Purchase order memiliki status draft, dipesan, diterima sebagian, selesai, atau dibatalkan.
+- Izin posting menentukan siapa yang boleh mengubah draft menjadi pesanan; approval berantai bukan MVP.
 - Penerimaan dapat dilakukan sebagian.
-- Biaya pembelian terakhir dan rata-rata bergerak dapat dihitung dari penerimaan.
+- Satuan beli dikonversi ke base unit memakai faktor yang disimpan sebagai snapshot.
+- Biaya pembelian per base unit dan rata-rata bergerak dihitung saat penerimaan diposting.
 - Pembatalan penerimaan tidak menghapus histori; sistem membuat pembalik yang terlacak.
 
 ### Pelanggan
@@ -135,10 +141,12 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 - Posisi stok, kartu stok, stok rendah, dan hasil opname.
 - Pembelian per pemasok dan penerimaan belum selesai.
 - Rekonsiliasi shift dan selisih kas.
+- Rekonsiliasi pembayaran non-tunai dan selisih settlement.
 
 ## 6. Aturan pengalaman pengguna
 
 - Satu tugas utama per halaman.
+- Backoffice memiliki maksimal tujuh menu utama.
 - Nama menu memakai istilah pengguna, bukan nama tabel atau proses internal.
 - Filter outlet dan tanggal selalu terlihat pada laporan.
 - Status offline, sinkronisasi, shift, dan outlet selalu terlihat pada POS.

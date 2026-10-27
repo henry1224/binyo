@@ -21,6 +21,13 @@ POS mobile harus mengutamakan kecepatan transaksi, keterbacaan nominal, dan kepa
 
 Tidak ada salinan seluruh menu backoffice di aplikasi kasir.
 
+Aturan navigasi:
+
+- Halaman `Jual` selalu menjadi tujuan awal saat shift terbuka.
+- Keranjang dan tombol bayar selalu dapat dijangkau tanpa membuka menu.
+- Tindakan manajer muncul saat dibutuhkan, bukan sebagai menu kasir tetap.
+- Status outlet, shift, koneksi, dan antrean sinkronisasi tetap terlihat tetapi tidak menutup area jual.
+
 ## 3. Alur mulai kerja
 
 1. Pengguna masuk dengan akun, lalu memakai PIN untuk akses harian bila perangkat sudah dipercaya.
@@ -41,6 +48,8 @@ Tidak ada salinan seluruh menu backoffice di aplikasi kasir.
 8. Konfirmasi ringkasan akhir.
 9. Simpan transaksi secara lokal lebih dulu, lalu antrekan sinkronisasi.
 10. Cetak atau bagikan struk.
+
+Target penjualan reguler setelah produk dipilih adalah maksimal lima interaksi: buka keranjang, bayar, pilih metode, konfirmasi, lalu selesai.
 
 ## 5. Layout
 
@@ -76,6 +85,13 @@ Tidak ada salinan seluruh menu backoffice di aplikasi kasir.
 - Kartu sebagai pencatatan manual.
 - Transfer sebagai pencatatan manual.
 - QRIS sebagai pencatatan manual hanya setelah kasir memastikan pembayaran pada alat/aplikasi penyedia.
+
+Untuk pembayaran manual non-tunai:
+
+- Referensi pembayaran dapat diwajibkan per metode.
+- Kasir melihat status `Tercatat`, bukan `Terverifikasi penyedia`.
+- Backoffice merekonsiliasi total POS dengan settlement penyedia per outlet, tanggal, dan metode.
+- Selisih tidak mengubah transaksi asli; pengguna membuat koreksi beralasan.
 
 ### Fase berikutnya
 
@@ -115,7 +131,9 @@ Jika perangkat belum menyinkron melewati batas yang ditetapkan bisnis, aplikasi 
 - Lihat ringkasan metode pembayaran tanpa membuka laporan bisnis sensitif.
 - Tutup shift dengan hitung kas fisik.
 - Simpan selisih dan catatan.
-- Shift tidak dapat ditutup saat transaksi lokal belum disimpan dengan aman.
+- Shift dapat masuk status `Menunggu sinkronisasi` bila seluruh transaksi sudah tersimpan aman di perangkat tetapi belum diterima server.
+- Penutupan server baru final setelah seluruh urutan transaksi perangkat sampai nomor penutupan diterima.
+- Kasir tidak dapat menghapus antrean transaksi atau membuka shift baru pada perangkat yang sama sebelum status penutupan aman.
 
 ## 10. Perangkat dan aksesori
 
@@ -137,3 +155,4 @@ Kalibrasi perangkat nyata wajib dilakukan sebelum pilot. Simulator tidak cukup u
 - Struk menampilkan bisnis, outlet, nomor, waktu, kasir, item, diskon, pajak, total, pembayaran, dan kembalian.
 - Status offline dan antrean sinkronisasi selalu terlihat.
 - Void, refund, dan diskon berizin tercatat pada audit log.
+- Shift offline tidak berstatus final di server sebelum seluruh transaksi sampai batas urutan penutupan tersinkron.

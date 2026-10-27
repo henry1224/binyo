@@ -14,8 +14,8 @@ Dokumen ini menetapkan bentuk dan aturan data, bukan skema SQL final.
 
 - Semua tabel bisnis memiliki `business_id` untuk isolasi tenant.
 - Semua waktu tersimpan dalam UTC dan ditampilkan memakai zona waktu outlet.
-- Uang disimpan sebagai integer satuan mata uang terkecil; untuk IDR berarti rupiah tanpa pecahan.
-- Kuantitas memakai decimal dengan presisi yang disepakati untuk bahan baku.
+- Total transaksi dan pembayaran disimpan sebagai integer satuan mata uang terkecil; untuk IDR berarti rupiah tanpa pecahan.
+- Kuantitas dan biaya per base unit memakai fixed decimal, bukan floating point. Nilai ledger dibulatkan ke rupiah saat posting.
 - Record transaksi penting tidak dihapus permanen.
 - Snapshot transaksi menjaga histori saat nama, harga, pajak, atau biaya produk berubah.
 - Ledger pergerakan adalah sumber kebenaran stok; saldo adalah hasil agregasi/cache.
@@ -37,6 +37,7 @@ flowchart TD
     Category --> Product
     Product --> ProductVariant
     ProductVariant --> OutletProduct
+    ProductVariant --> ProductUnit
     ProductVariant --> RecipeComponent
     ProductVariant --> ModifierGroup
     ModifierGroup --> ModifierOption
@@ -105,12 +106,25 @@ Peran adalah kumpulan izin. Penugasan menyebut pengguna, outlet, dan peran agar 
 
 - `id`, `business_id`, `product_id`
 - `sku`, `barcode`, `name`
-- `base_unit`
-- `sell_price`, `cost_price`
+- `base_unit_id`
+- `sell_price`, `default_purchase_cost`
 - `track_stock`, `allow_negative_stock`
 - `is_default`, `status`
 
 Produk tanpa pilihan memiliki satu varian default. Semua baris penjualan menunjuk varian, bukan langsung ke produk.
+
+### units dan product_units
+
+`units` menyimpan kode dan jenis satuan, misalnya `pcs`, `gr`, `kg`, `ml`, atau `liter`.
+
+`product_units` menyimpan:
+
+- `product_variant_id`, `unit_id`
+- `conversion_factor_to_base`
+- `is_purchase_unit`, `is_sale_unit`
+- `barcode` opsional
+
+Satu SKU memiliki satu base unit. Konversi tidak boleh melintasi jenis satuan tanpa aturan produk yang eksplisit; `kg` ke `gr` valid, tetapi `liter` ke `pcs` tidak diasumsikan sistem.
 
 ### outlet_products
 
@@ -129,7 +143,7 @@ Grup menyimpan nama, minimum, maksimum, dan apakah wajib. Opsi menyimpan nama, t
 - `component_variant_id`
 - `quantity_in_base_unit`
 
-MVP memakai satu base unit per SKU. Konversi unit pembelian yang kompleks ditunda sampai kebutuhan pilot jelas.
+Resep selalu disimpan dalam base unit komponen. HPP resep per outlet dihitung dari jumlah komponen dikali `inventory_balances.average_cost` komponen pada outlet tersebut. Modifier yang mengonsumsi stok memakai aturan yang sama.
 
 ## 5. Penjualan
 
@@ -146,7 +160,8 @@ MVP memakai satu base unit per SKU. Konversi unit pembelian yang kompleks ditund
 ### sale_lines
 
 - `id`, `sale_id`, `product_variant_id`
-- Snapshot: `product_name`, `variant_name`, `sku`, `unit`, `unit_price`, `unit_cost`, `tax_rate`
+- Snapshot: `product_name`, `variant_name`, `sku`, `unit`, `unit_price`, `unit_cost`
+- Snapshot pajak: `tax_name`, `tax_rate`, `tax_calculation_type`
 - `quantity`, `discount_total`, `tax_total`, `line_total`
 - `note`
 
@@ -159,7 +174,17 @@ MVP memakai satu base unit per SKU. Konversi unit pembelian yang kompleks ditund
 
 - `id`, `sale_id`, `payment_method_id`
 - `amount`, `status`, `external_reference`
-- `idempotency_key`, `paid_at`
+- `verification_status`: `recorded`, `matched`, `disputed`
+- `idempotency_key`, `paid_at`, `matched_at`
+
+### payment_reconciliations
+
+- `id`, `business_id`, `outlet_id`, `payment_method_id`
+- `business_date`, `expected_amount`, `settled_amount`, `difference`
+- `status`: `draft`, `matched`, `difference_accepted`
+- `reference`, `note`, `created_by`, `closed_by`
+
+Rekonsiliasi tidak mengubah transaksi atau pembayaran asli. Koreksi memakai record baru dengan alasan dan audit.
 
 ### refunds dan refund_lines
 
@@ -173,7 +198,11 @@ Tidak ada hard delete untuk `sales`, `sale_lines`, `payments`, atau `refunds`.
 
 - `id`, `outlet_id`, `device_id`, `opened_by`, `closed_by`
 - `opening_cash`, `expected_cash`, `counted_cash`, `difference`
-- `opened_at`, `closed_at`, `status`
+- `opening_device_sequence`, `closing_device_sequence`
+- `opened_at`, `close_requested_at`, `closed_at`
+- `status`: `open`, `closing_pending_sync`, `closed`
+
+Server hanya mengubah shift menjadi `closed` setelah seluruh transaksi perangkat sampai `closing_device_sequence` diterima. Penutupan offline tetap tersimpan lokal sebagai `closing_pending_sync`.
 
 ### cash_movements
 
@@ -190,7 +219,7 @@ Penjualan tunai tidak perlu diduplikasi sebagai `cash_movement`; kas yang dihara
 - `id`, `business_id`, `outlet_id`, `product_variant_id`
 - `movement_type`: `opening`, `sale`, `sale_return`, `purchase_receipt`, `transfer_out`, `transfer_in`, `adjustment`, `recipe_use`
 - `quantity_delta`
-- `unit_cost_snapshot`
+- `unit_cost_snapshot`, `value_delta`
 - `source_type`, `source_id`
 - `reason_id`, `occurred_at`, `created_by`
 
@@ -204,6 +233,26 @@ Penjualan tunai tidak perlu diduplikasi sebagai `cash_movement`; kas yang dihara
 - `updated_at`
 
 Saldo diperbarui dalam transaksi database yang sama dengan penambahan ledger. Rekonsiliasi berkala membandingkan saldo dengan total ledger.
+
+Penerimaan memperbarui biaya rata-rata bergerak saat `quantity_before` tidak negatif:
+
+```text
+new_average_cost =
+    ((quantity_before x average_cost_before)
+    + (quantity_received_base x receipt_cost_per_base_unit))
+    / (quantity_before + quantity_received_base)
+```
+
+Opening stock wajib memiliki biaya awal. Penjualan menyalin `average_cost` atau total biaya resep ke baris transaksi. Histori penjualan tidak dihitung ulang saat biaya baru diterima.
+
+Aturan biaya pergerakan:
+
+- Transfer keluar memakai biaya rata-rata sumber sebagai snapshot; transfer masuk membawa biaya yang sama lalu memperbarui rata-rata tujuan.
+- Pengembalian penjualan memakai `sale_lines.unit_cost` transaksi asal.
+- Penyesuaian stok keluar memakai biaya rata-rata saat posting.
+- Penyesuaian stok masuk memakai biaya rata-rata saat posting atau biaya eksplisit untuk opening stock.
+- Jika stok sebelum penerimaan nol, biaya rata-rata baru sama dengan biaya penerimaan.
+- Jika stok minus diizinkan, penjualan memakai biaya terakhir sebagai perkiraan dan penerimaan berikutnya tidak menulis ulang HPP transaksi lama.
 
 ### stock_counts dan stock_count_lines
 
@@ -224,9 +273,20 @@ Status minimum: `draft`, `sent`, `received`, `cancelled`. Stok sumber berkurang 
 
 Menyimpan pemasok, outlet tujuan, nomor, status, tanggal, SKU, jumlah dipesan, biaya, pajak, dan catatan.
 
+Status minimum: `draft`, `ordered`, `partially_received`, `received`, `cancelled`. MVP tidak memiliki approval berantai; izin `purchase_order.post` mengontrol perubahan dari `draft` ke `ordered`.
+
+Baris menyimpan:
+
+- `product_variant_id`, `purchase_unit_id`
+- `quantity_purchase_unit`, `conversion_factor_snapshot`
+- `unit_cost_purchase`, `tax_total`, `line_total`
+- `quantity_ordered_base`, `quantity_received_base`
+
 ### goods_receipts dan goods_receipt_lines
 
-Satu PO dapat memiliki beberapa penerimaan. Posting penerimaan membuat `stock_movements` dan memperbarui jumlah diterima.
+Satu PO dapat memiliki beberapa penerimaan. Baris penerimaan menyimpan satuan beli, faktor konversi, jumlah base unit, biaya baris, biaya tambahan teralokasi, dan biaya per base unit. Posting penerimaan membuat `stock_movements`, memperbarui jumlah diterima, dan menghitung `average_cost` baru.
+
+Biaya tambahan pembelian bernilai nol bila fitur landed cost belum diaktifkan. Jika diaktifkan, biaya dialokasikan proporsional terhadap nilai pembelian baris.
 
 ## 9. Pelanggan
 
@@ -252,10 +312,27 @@ Poin, saldo pelanggan, dan loyalty ledger ditunda.
 
 Aturan pembulatan ditetapkan satu kali untuk bisnis dan diuji dengan contoh nominal batas.
 
+### service_charge_profiles
+
+- `id`, `business_id`, `name`
+- `rate`, `calculation_base`
+- `tax_profile_id` opsional bila service charge kena pajak
+- `status`
+
+Urutan hitung MVP:
+
+1. Harga dikali jumlah.
+2. Diskon baris dan transaksi.
+3. Service charge dari nilai setelah diskon bila diaktifkan.
+4. Pajak dihitung inclusive atau exclusive sesuai profil, termasuk service charge hanya bila dikonfigurasi.
+5. Pembulatan dilakukan sekali pada total akhir dan disimpan sebagai baris penyesuaian.
+
+Snapshot transaksi menyimpan basis hitung, tarif, nominal, dan aturan inclusive/exclusive. Perubahan pengaturan tidak mengubah transaksi lama.
+
 ### payment_methods
 
 - `id`, `business_id`, `name`, `type`
-- `requires_reference`, `status`, `display_order`
+- `requires_reference`, `requires_reconciliation`, `status`, `display_order`
 
 ## 11. Audit dan sinkronisasi
 
@@ -278,6 +355,8 @@ Idempotency pada transaksi dan pembayaran memakai unique constraint. Validasi ap
 - `idempotency_key` transaksi unik per bisnis.
 - `idempotency_key` pembayaran unik per bisnis.
 - Nomor struk unik per outlet.
+- Satu kombinasi `device_id` dan `device_sequence` hanya boleh menghasilkan satu transaksi.
 - Jumlah, harga, diskon, pajak, dan total divalidasi server.
+- `conversion_factor_snapshot` dan jumlah base unit pada penerimaan harus lebih besar dari nol.
 - Referensi lintas bisnis ditolak oleh database atau service boundary.
 - Record yang sudah diposting tidak dapat diubah tanpa reversal.

@@ -1,6 +1,6 @@
 ---
 title: "Referensi dan Analisis POS"
-subtitle: "VireoPOS, Shopify POS, Square Retail, Odoo POS, dan konteks lokal"
+subtitle: "VireoPOS, Loyverse, Square, Shopify, Odoo, Toast, dan standar pendukung"
 author: "Binyo POS"
 date: "2026-10-27"
 status: "Draft"
@@ -14,7 +14,7 @@ Tanggal observasi: 2026-10-27
 
 Referensi: <https://eretail.vireopos.com/#/vireodashboard.crux>
 
-Observasi dilakukan pada sesi yang disediakan pengguna. Dokumen hanya mencatat struktur produk; identitas akun, outlet, dan nilai bisnis tidak disalin.
+Observasi dilakukan pada sesi yang disediakan pengguna. Dokumen hanya mencatat struktur menu dan produk; identitas akun, outlet, dan nilai bisnis tidak disalin.
 
 ### Struktur menu yang diamati
 
@@ -60,21 +60,32 @@ Observasi dilakukan pada sesi yang disediakan pengguna. Dokumen hanya mencatat s
 - Master data kecil tidak menjadi menu sendiri.
 - Alur stok memakai satu ledger.
 - PO dan penerimaan berada dalam satu modul pembelian.
-- Perangkat, staf, dan akses berada dalam satu area tim/outlet.
+- Perangkat, staf, akses, dan audit berada dalam satu area operasional.
 - Akunting penuh diganti ekspor sampai ada kebutuhan nyata.
 - Loyalty, komisi, waralaba, broadcast, dan integrasi delivery ditunda.
 
-## 2. Shopify POS
+Audit setiap menu dan HPP: [`vireo-menu-audit.md`](vireo-menu-audit.md).
 
-Referensi resmi: <https://help.shopify.com/en/manual/sell-in-person>
+## 2. Loyverse
+
+Referensi:
+
+- <https://loyverse.com/>
+- <https://help.loyverse.com/help/advanced-inventory-management>
+- <https://help.loyverse.com/help/inventory-history-and-valuation>
+- <https://help.loyverse.com/help/inventory-valuation-report>
+- <https://help.loyverse.com/help/how-work-additional-costs-purchase>
 
 Pelajaran utama:
 
-- Katalog, order, dan inventory tersinkron antar-location dan sales channel.
-- POS hanya membawa fungsi penjualan yang relevan; administrasi lebih luas tetap di backoffice.
-- Model product + variant cocok untuk barang sederhana maupun produk dengan pilihan.
+- POS kasir tetap sederhana sementara inventory lanjutan tinggal di backoffice.
+- Histori stok memakai satu daftar perubahan dengan tautan ke dokumen sumber.
+- Purchase order, transfer, adjustment, count, valuation, dan production dikelompokkan sebagai pekerjaan persediaan.
+- Average cost diperbarui saat barang diterima, bukan saat purchase order dibuat.
+- Biaya tambahan pembelian dapat dialokasikan proporsional terhadap nilai barang yang diterima.
+- Laporan valuasi memisahkan nilai persediaan, nilai retail, potensi laba, dan margin.
 
-Gunakan sebagai acuan model katalog, lokasi, sinkronisasi, dan pemisahan POS/backoffice. Jangan menyalin kompleksitas omnichannel sebelum dibutuhkan.
+Gunakan Loyverse sebagai acuan utama kesederhanaan navigasi dan weighted average cost. Jangan menyalin pemisahan fitur berbayar atau seluruh modul advanced inventory.
 
 ## 3. Square for Retail
 
@@ -89,7 +100,19 @@ Pelajaran utama:
 
 Gunakan sebagai acuan checkout, inventory history, stocktake, refund, dan laporan yang menghasilkan tindakan.
 
-## 4. Odoo POS
+## 4. Shopify POS
+
+Referensi resmi: <https://help.shopify.com/en/manual/sell-in-person>
+
+Pelajaran utama:
+
+- Katalog, order, dan inventory tersinkron antar-location dan sales channel.
+- POS hanya membawa fungsi penjualan yang relevan; administrasi lebih luas tetap di backoffice.
+- Model product + variant cocok untuk barang sederhana maupun produk dengan pilihan.
+
+Gunakan sebagai acuan model katalog, lokasi, sinkronisasi, dan pemisahan POS/backoffice. Jangan menyalin kompleksitas omnichannel sebelum dibutuhkan.
+
+## 5. Odoo POS
 
 Referensi resmi: <https://www.odoo.com/documentation/19.0/applications/sales/point_of_sale.html>
 
@@ -101,7 +124,32 @@ Pelajaran utama:
 
 Gunakan sebagai acuan dokumentasi alur, offline resilience, hardware checklist, dan pemisahan capability berdasarkan tipe usaha. Jangan membawa seluruh ERP ke Binyo.
 
-## 5. Referensi lokal yang perlu divalidasi
+## 6. Toast
+
+Referensi resmi: <https://pos.toasttab.com/products/point-of-sale>
+
+Pelajaran utama:
+
+- Menu, modifier, recipe costing, kitchen routing, dan ordering mode penting untuk F&B.
+- Fungsi dapur tidak perlu muncul pada bisnis retail.
+
+Gunakan hanya bila pilot Binyo fokus F&B dan membutuhkan alur dapur. Jangan menambahkan meja, kursus hidangan, atau KDS pada MVP tanpa kebutuhan nyata.
+
+## 7. Standar pendukung
+
+### GS1 Barcode
+
+Referensi: <https://www.gs1.org/standards/barcodes>
+
+Gunakan untuk GTIN, EAN/UPC, lot, serial, berat, tanggal, dan barcode 2D. Jangan membuat format barcode bisnis sebagai pengganti standar bila produk sudah memakai kode GS1.
+
+### OWASP MASVS
+
+Referensi: <https://mas.owasp.org/MASVS/>
+
+Gunakan untuk secure storage, crypto, autentikasi, jaringan, platform, dan privasi aplikasi POS mobile.
+
+## 8. Referensi lokal yang perlu divalidasi
 
 - Moka POS: ekspektasi merchant Indonesia, outlet, laporan, dan pembayaran lokal.
 - Olsera: retail/F&B, inventory, dan omnichannel lokal.
@@ -111,14 +159,24 @@ Gunakan sebagai acuan dokumentasi alur, offline resilience, hardware checklist, 
 
 Referensi lokal dipakai untuk memahami kebiasaan dan regulasi, bukan untuk menyalin antarmuka.
 
-## 6. Rekomendasi gabungan
+## 9. Rekomendasi gabungan
 
 Tidak ada satu produk yang harus disalin penuh:
 
 - Vireo memberi cakupan operasional Indonesia.
+- Loyverse memberi struktur paling sederhana untuk POS dan inventory.
 - Shopify memberi model katalog dan location yang rapi.
 - Square memberi alur checkout/inventory yang lebih mudah dipahami.
 - Odoo memberi referensi offline, hardware, dan pemisahan retail/restoran.
+- Toast memberi pola khusus F&B bila benar-benar diperlukan.
 - Produk lokal memberi konteks pembayaran dan ekspektasi merchant Indonesia.
 
 Binyo memakai bagian paling kecil yang menyelesaikan kebutuhan pilot.
+
+Prioritas acuan:
+
+1. Loyverse untuk struktur sederhana.
+2. Square untuk checkout, refund, dan inventory history.
+3. Shopify untuk produk, varian, dan outlet.
+4. Vireo untuk kelengkapan proses lokal dan validasi migrasi.
+5. Odoo atau Toast hanya untuk kebutuhan teknis/segmen khusus.

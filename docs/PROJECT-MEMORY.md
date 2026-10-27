@@ -34,6 +34,18 @@ flowchart LR
 - Dashboard dan laporan operasional.
 - Operasi offline sementara dengan sinkronisasi idempotent.
 
+### Struktur menu backoffice
+
+- Beranda.
+- Penjualan.
+- Produk.
+- Persediaan.
+- Laporan.
+- Operasional.
+- Pengaturan.
+
+Master data kecil, pembelian, pelanggan, dan proses transfer tidak menjadi menu utama terpisah.
+
 ### Ditunda
 
 - General ledger, payroll, waralaba, komisi, dan marketing automation.
@@ -45,8 +57,13 @@ flowchart LR
 - Varian/SKU adalah unit jual; produk tanpa pilihan memiliki satu varian default.
 - Transaksi menyimpan snapshot nama, harga, pajak, biaya, dan modifier.
 - Pergerakan stok adalah sumber kebenaran; saldo adalah agregasi/cache.
+- Setiap SKU memiliki satu base unit; satuan beli dikonversi memakai faktor yang disimpan sebagai snapshot.
+- Penerimaan barang memperbarui HPP rata-rata bergerak per SKU dan outlet.
+- Penjualan menyimpan snapshot HPP produk atau resep; histori laba tidak berubah karena pembelian berikutnya.
 - Transaksi selesai tidak dihapus atau ditimpa; koreksi memakai void, refund, atau reversal.
 - Idempotency transaksi dan pembayaran dilindungi unique constraint.
+- Pembayaran non-tunai manual direkonsiliasi tanpa mengubah transaksi asli.
+- Shift offline baru final setelah seluruh urutan transaksi sampai batas penutupan diterima server.
 - Semua data bisnis dibatasi `business_id` dan izin outlet.
 
 Detail: [`architecture/data-model.md`](architecture/data-model.md).
@@ -99,11 +116,12 @@ Detail: [`conventions/git-workflow.md`](conventions/git-workflow.md) dan [`conve
 | Teknis dan keamanan | [`architecture/technical-foundation.md`](architecture/technical-foundation.md) |
 | Delivery | [`delivery/roadmap.md`](delivery/roadmap.md) |
 | Benchmark | [`references/pos-benchmark.md`](references/pos-benchmark.md) |
+| Audit menu Vireo | [`references/vireo-menu-audit.md`](references/vireo-menu-audit.md) |
 | Convention | [`conventions/README.md`](conventions/README.md) |
 
 ## 9. Keputusan terbuka
 
-- Segmen pilot: retail, F&B, atau hybrid.
+- Segmen pilot belum disetujui; rekomendasi awal adalah F&B ringan dengan dukungan barang retail sederhana.
 - Jumlah outlet/perangkat dan batas durasi offline.
 - Model printer, scanner, cash drawer, dan Android minimum.
 - Payment provider dan metode QRIS.
