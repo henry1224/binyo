@@ -22,6 +22,8 @@ Binyo adalah sistem POS untuk operasional retail dan F&B ringan. Dokumentasi mem
 - [Roadmap](./delivery/roadmap.md) — milestone dan gerbang penerimaan.
 - [Benchmark POS](./references/pos-benchmark.md) — Vireo, Loyverse, Square, Shopify, Odoo, Toast, dan standar pendukung.
 - [Audit menu Vireo](./references/vireo-menu-audit.md) — pemetaan setiap menu, HPP, dan keputusan Binyo.
+- [Matriks fitur Vireo](./references/vireo-feature-matrix.md) — inventaris 1:1 route, field, aksi, permission, dan laporan.
+- [Validasi HPP Vireo](./references/vireo-hpp-validation.md) — bukti, rumus target, skenario sandbox, dan acceptance gate.
 
 ## Status dokumen
 
@@ -35,6 +37,8 @@ Binyo adalah sistem POS untuk operasional retail dan F&B ringan. Dokumentasi mem
 | Roadmap | Draft | Produk + Engineering | Urutan pembangunan dan kriteria selesai |
 | Referensi | Draft | Produk | Temuan Vireo dan produk pembanding |
 | Audit menu Vireo | Draft | Produk | Cakupan menu, HPP, penyederhanaan, dan batas observasi |
+| Matriks fitur Vireo | Draft | Produk + Engineering | Ketertelusuran fitur Vireo ke keputusan Binyo |
+| Validasi HPP Vireo | Draft | Produk + Engineering | Aturan biaya, bukti Vireo, dan skenario validasi |
 
 ## Keputusan awal
 

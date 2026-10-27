@@ -117,6 +117,8 @@ Detail: [`conventions/git-workflow.md`](conventions/git-workflow.md) dan [`conve
 | Delivery | [`delivery/roadmap.md`](delivery/roadmap.md) |
 | Benchmark | [`references/pos-benchmark.md`](references/pos-benchmark.md) |
 | Audit menu Vireo | [`references/vireo-menu-audit.md`](references/vireo-menu-audit.md) |
+| Matriks fitur Vireo | [`references/vireo-feature-matrix.md`](references/vireo-feature-matrix.md) |
+| Validasi HPP Vireo | [`references/vireo-hpp-validation.md`](references/vireo-hpp-validation.md) |
 | Convention | [`conventions/README.md`](conventions/README.md) |
 
 ## 9. Keputusan terbuka

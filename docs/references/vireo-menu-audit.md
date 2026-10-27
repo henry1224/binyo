@@ -14,6 +14,8 @@ Referensi: <https://eretail.vireopos.com/#/vireodashboard.crux>
 
 Audit dilakukan pada sesi yang disediakan pengguna. Dokumen ini tidak menyalin identitas akun, outlet, pelanggan, nomor dokumen, atau nilai transaksi nyata.
 
+Inventaris 1:1 terdapat pada [`vireo-feature-matrix.md`](vireo-feature-matrix.md). Rumus dan skenario HPP terdapat pada [`vireo-hpp-validation.md`](vireo-hpp-validation.md).
+
 ## 1. Kesimpulan
 
 Vireo memiliki cakupan operasional luas, tetapi banyak pekerjaan dipecah menjadi menu teknis. Binyo mengambil kemampuan intinya lalu menyusun ulang berdasarkan tugas pengguna.
@@ -369,4 +371,4 @@ Binyo menambahkan `Operasional > Log Aktivitas` agar owner dapat melihat perubah
 
 ## 11. Batas Audit
 
-Audit mencakup menu dari Dashboard, Data Master, Transaksi, Laporan, Akunting, dan Akun yang terlihat pada sesi. Formula backend, aturan pembulatan, perilaku tombol hitung ulang HPP, serta integrasi eksternal belum dapat dibuktikan hanya dari UI dan harus divalidasi dengan contoh transaksi uji sebelum migrasi.
+Audit mencakup Dashboard, 23 menu Data Master, 16 menu Transaksi, 48 variasi laporan, Akunting, Akun, Integrasi yang terlihat, serta permission aplikasi POS. Formula backend, aturan pembulatan, perilaku tombol hitung ulang HPP, dan perubahan status dokumen belum dapat dibuktikan hanya dari UI dan harus divalidasi memakai tenant sandbox.
