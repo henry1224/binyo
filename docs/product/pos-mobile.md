@@ -29,7 +29,7 @@ Aturan navigasi:
 - Tab, menu, dan tombol tindakan mengikuti permission pengguna pada outlet aktif.
 - Status outlet, shift, koneksi, dan antrean sinkronisasi tetap terlihat tetapi tidak menutup area jual.
 
-Role dapat dibuat dinamis dari backoffice. Nama seperti Pemilik, Manajer, Kasir, dan Gudang hanya preset; permission menentukan kemampuan sebenarnya. Void transaksi, pembalikan pembayaran, dan tindakan sensitif lain meminta PIN penyetuju bila pengguna aktif tidak memiliki izin langsung.
+Peran dapat dibuat dinamis dari backoffice. Nama seperti Pemilik, Manajer, Kasir, dan Gudang hanya preset; permission menentukan kemampuan sebenarnya. Void transaksi, pembalikan pembayaran, dan tindakan sensitif lain meminta PIN penyetuju bila pengguna aktif tidak memiliki izin langsung.
 
 ## 3. Alur mulai kerja
 
@@ -58,29 +58,9 @@ Target penjualan reguler setelah produk dipilih adalah maksimal lima interaksi: 
 
 ## 5. Layout
 
-### Tablet landscape
+POS mengikuti arah `Counterline` dengan operational rail ringkas, katalog yang dominan, keranjang tetap terlihat pada tablet, dan ringkasan bill yang menempel di bawah pada phone. Total dan tombol bayar menjadi fokus; dekorasi tidak boleh mengurangi area jual.
 
-```text
-+------------------------------------------------+----------------------+
-| Outlet | Shift | Online | Tersinkron           | Keranjang            |
-|------------------------------------------------| Item                 |
-| Cari / Scan                                    | Modifier             |
-|------------------------------------------------| Qty x Harga          |
-| Kategori                                       |----------------------|
-|------------------------------------------------| Subtotal             |
-| Produk                                         | Diskon               |
-| [Produk] [Produk] [Produk] [Produk]            | Pajak                |
-| [Produk] [Produk] [Produk] [Produk]            | Total                |
-|                                                | [Bayar]              |
-+------------------------------------------------+----------------------+
-```
-
-### Phone portrait
-
-- Produk memenuhi layar.
-- Ringkasan keranjang tetap terlihat di bawah.
-- Keranjang lengkap dibuka sebagai panel.
-- Tombol bayar tidak menutup total dan jumlah item.
+Wireframe tablet, phone, split bill, payment success, token visual, motion, dan aturan aksesibilitas berada pada [`interface-design.md`](interface-design.md). Implementasi POS wajib mengikuti dokumen kanonis tersebut dan tetap memenuhi target maksimal lima interaksi setelah produk dipilih.
 
 ## 6. Pembayaran
 

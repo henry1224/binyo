@@ -178,43 +178,9 @@ Hak akses disimpan per kemampuan, bukan hanya nama peran. Nama peran di atas ada
 
 ## 5. Arah visual
 
-Tema: `operational calm` - data padat, kontras jelas, gangguan rendah.
+Backoffice mengikuti arah `Counterline`: shell terang, tabel presisi, satu ledger band untuk ringkasan, dan operational rail gelap yang menunjukkan outlet, hari usaha, shift, perangkat, serta sinkronisasi. Dashboard mendahulukan daftar masalah yang perlu tindakan sebelum grafik.
 
-### Token awal
-
-| Peran | Nilai |
-|---|---|
-| Latar utama | `#EEF3F4` |
-| Permukaan | `#FFFFFF` |
-| Teks utama | `#172320` |
-| Aksen utama | `#167052` |
-| Peringatan | `#C4811C` |
-| Bahaya | `#C3463D` |
-| Garis | `#D5DEDC` |
-
-Tipografi:
-
-- Judul dan navigasi: Sora.
-- Teks UI: Source Sans 3.
-- Nominal, nomor struk, dan data tabular: IBM Plex Mono.
-
-### Struktur desktop
-
-```text
-+----------------+------------------------------------------------------+
-| Binyo          | Outlet | Rentang tanggal              | Profil       |
-|----------------|------------------------------------------------------|
-| Beranda        | Judul halaman                         | Aksi utama   |
-| Penjualan      |------------------------------------------------------|
-| Produk         | Filter dan ringkasan                                |
-| Persediaan     |------------------------------------------------------|
-| Laporan        |                                                      |
-| Operasional    |                                                      |
-| Pengaturan     |                                                      |
-+----------------+------------------------------------------------------+
-```
-
-Elemen khas Binyo adalah `operational rail`: bar tipis yang selalu menunjukkan outlet aktif, shift terbuka, perangkat, koneksi, dan status sinkronisasi. Elemen ini informatif, bukan dekorasi.
+Token, tipografi, layout, komponen, motion, wireframe, dan gerbang penerimaan berada pada [`interface-design.md`](interface-design.md). Dokumen tersebut menjadi sumber kanonis; halaman backoffice tidak membuat tema atau komponen visual sendiri.
 
 ## 6. Aturan interaksi
 

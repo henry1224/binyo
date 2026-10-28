@@ -15,6 +15,7 @@ Roadmap memakai milestone berbasis hasil, bukan tanggal. Estimasi dibuat setelah
 - [ ] Tentukan segmen awal, outlet pilot, perangkat, printer, pembayaran, dan pajak.
 - [ ] Review serta setujui product requirements.
 - [ ] Review struktur menu, model data, dan batas MVP.
+- [ ] Review sistem antarmuka, wireframe backoffice/POS, state wajib, responsif, dan aksesibilitas.
 - [ ] Review kontrak replica: field whitelist, switch per outlet, retensi, permission, dan larangan sumber laporan resmi.
 - [ ] Buat contoh data produk, transaksi, stok, dan struk.
 - [ ] Pilih 5-10 alur penerimaan utama untuk demo.

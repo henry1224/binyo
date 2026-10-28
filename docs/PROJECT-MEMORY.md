@@ -11,6 +11,8 @@ Gunakan file ini sebagai peta dokumen dan ringkasan keputusan aktif. Detail leng
 
 Pilot pertama menargetkan kedai kopi: satu outlet, satu pemilik, satu manajer, satu atau lebih kasir, satu atau lebih staf gudang, satu perangkat utama, dan satu perangkat cadangan bila tersedia. Model data dan akses tetap mendukung perluasan menjadi dua atau tiga outlet tanpa migrasi konsep.
 
+Arah visual `Counterline` memakai operational rail sebagai elemen khas lintas backoffice dan POS. Detail kanonis: [`product/interface-design.md`](product/interface-design.md).
+
 ## 2. Alur bisnis utama
 
 ```mermaid
@@ -125,6 +127,7 @@ Detail: [`conventions/git-workflow.md`](conventions/git-workflow.md) dan [`conve
 | Scope dan kebutuhan | [`product/product-requirements.md`](product/product-requirements.md) |
 | Backoffice | [`product/backoffice.md`](product/backoffice.md) |
 | POS mobile | [`product/pos-mobile.md`](product/pos-mobile.md) |
+| Sistem antarmuka | [`product/interface-design.md`](product/interface-design.md) |
 | Model data | [`architecture/data-model.md`](architecture/data-model.md) |
 | Teknis dan keamanan | [`architecture/technical-foundation.md`](architecture/technical-foundation.md) |
 | Delivery | [`delivery/roadmap.md`](delivery/roadmap.md) |

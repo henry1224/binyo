@@ -175,6 +175,8 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 
 ## 6. Aturan pengalaman pengguna
 
+Arah visual, komponen, layout, dan wireframe kanonis berada pada [`interface-design.md`](interface-design.md).
+
 - Satu tugas utama per halaman.
 - Backoffice memiliki maksimal tujuh menu utama.
 - Nama menu memakai istilah pengguna, bukan nama tabel atau proses internal.

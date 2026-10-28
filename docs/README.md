@@ -17,6 +17,7 @@ Binyo adalah sistem POS untuk operasional retail dan F&B ringan. Dokumentasi mem
 - [Product requirements](./product/product-requirements.md) — masalah, pengguna, scope, dan keberhasilan.
 - [Backoffice](./product/backoffice.md) — menu, akses, laporan, serta arah visual.
 - [POS mobile](./product/pos-mobile.md) — kasir, pembayaran, shift, offline, dan perangkat.
+- [Sistem antarmuka](./product/interface-design.md) — visual language, komponen, layout responsif, dan wireframe.
 - [Model data](./architecture/data-model.md) — entitas, relasi, ledger, snapshot, dan constraint.
 - [Fondasi teknis](./architecture/technical-foundation.md) — batas modul, API, sinkronisasi, keamanan, dan operasi.
 - [Roadmap](./delivery/roadmap.md) — milestone dan gerbang penerimaan.
@@ -32,6 +33,7 @@ Binyo adalah sistem POS untuk operasional retail dan F&B ringan. Dokumentasi mem
 | Product requirements | Draft | Owner produk | Masalah, pengguna, ruang lingkup, dan aturan produk |
 | Struktur backoffice | Draft | Owner produk | Navigasi, halaman, laporan, dan hak akses |
 | POS mobile | Draft | Owner produk | Alur kasir, shift, pembayaran, dan offline |
+| Sistem antarmuka | Draft | Product Design + Engineering | Token, layout, komponen, responsif, dan aksesibilitas |
 | Model data | Draft | Engineering | Entitas, relasi, sumber kebenaran, dan histori |
 | Fondasi teknis | Draft | Engineering | Batas sistem, API, keamanan, sinkronisasi, dan operasi |
 | Roadmap | Draft | Produk + Engineering | Urutan pembangunan dan kriteria selesai |
