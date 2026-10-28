@@ -47,6 +47,7 @@ Binyo adalah sistem POS untuk operasional retail dan F&B ringan. Dokumentasi mem
 - Pilot pertama adalah kedai kopi dengan satu outlet, satu perangkat utama, dan satu perangkat cadangan bila tersedia.
 - Peran bersifat dinamis per outlet; izin yang sama mengontrol menu backoffice, tab POS, dan tindakan sensitif.
 - Split bill per item termasuk MVP tanpa membuat transaksi pembatalan baru.
+- Replica operasional sanitasi memakai switch per outlet; database utama tetap sumber laporan resmi.
 - Penjualan harus tetap dapat dicatat saat internet terputus sementara.
 - Penjualan, pembayaran, dan stok memakai histori; data operasional penting tidak dihapus permanen.
 - Akunting penuh, waralaba, komisi, kampanye WhatsApp, dan marketplace integration bukan MVP.

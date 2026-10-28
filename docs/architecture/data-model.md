@@ -65,6 +65,7 @@ flowchart TD
 - `timezone`
 - `receipt_prefix`
 - `prevent_negative_stock`, default aktif
+- `replica_enabled`, default `false`
 - `status`
 
 ### users
@@ -370,6 +371,7 @@ Snapshot transaksi menyimpan basis hitung, tarif, nominal, dan aturan inclusive/
 - Pelaku, outlet, perangkat, tindakan, jenis record, ID record, waktu.
 - Nilai sebelum/sesudah untuk tindakan sensitif yang relevan.
 - IP dan metadata sesi untuk backoffice.
+- Perubahan `replica_enabled` menyimpan alasan dan hanya dapat dilakukan permission `replica.manage`.
 
 ### sync_batches
 
@@ -377,7 +379,45 @@ Snapshot transaksi menyimpan basis hitung, tarif, nominal, dan aturan inclusive/
 
 Idempotency pada transaksi dan pembayaran memakai unique constraint. Validasi aplikasi saja tidak cukup.
 
-## 12. Constraint wajib
+## 12. Replica operasional
+
+### outbox_events
+
+- `id`, `business_id`, `outlet_id`
+- `event_type`, `source_type`, `source_id`
+- `payload`, hanya berisi field whitelist replica
+- `status`: `pending`, `processing`, `completed`, atau `failed`
+- `attempts`, `available_at`, `last_error`
+- `occurred_at`, `completed_at`
+
+Outbox dibuat dalam transaksi database yang sama dengan perubahan sumber. Worker menjadi satu-satunya komponen yang menulis ke database replica. Kegagalan mirror tidak melakukan rollback transaksi utama.
+
+Aturan pembuatan event:
+
+- Transaksi baru membuat event hanya jika `outlets.replica_enabled` aktif saat command pertama kali diterima server.
+- Void, refund, reversal pembayaran, dan perubahan status selalu membuat event bila transaksi asal pernah dicerminkan, walaupun switch kemudian nonaktif.
+- Event yang sudah `pending` tetap diproses setelah switch nonaktif.
+- Mengaktifkan switch tidak melakukan backfill transaksi lama.
+
+Payload replica boleh memuat:
+
+- ID sumber, bisnis, outlet, nomor struk, waktu, dan status transaksi.
+- Snapshot produk, jumlah, harga, diskon, pajak, service charge, dan total.
+- Metode serta nominal pembayaran.
+- Nominal dan status void/refund.
+
+Payload replica tidak boleh memuat:
+
+- Identitas atau kontak pelanggan.
+- HPP, laba, dan biaya internal.
+- PIN, password, token, atau kredensial.
+- Referensi pembayaran sensitif dan catatan internal.
+
+Database replica memakai `source_id` dan `event_id` unik untuk idempotent upsert. Record berumur lebih dari 30 hari dihapus oleh worker retensi; proses ini tidak memiliki izin hapus pada database utama. Laporan resmi dan pajak tidak memiliki koneksi baca ke database replica.
+
+Outbox yang selesai disimpan minimal 30 hari untuk audit delivery dan pemulihan replica selama jendela retensinya.
+
+## 13. Constraint wajib
 
 - SKU unik per bisnis bila diisi.
 - Barcode unik per bisnis bila diisi.
@@ -392,3 +432,6 @@ Idempotency pada transaksi dan pembayaran memakai unique constraint. Validasi ap
 - `conversion_factor_snapshot` dan jumlah base unit pada penerimaan harus lebih besar dari nol.
 - Referensi lintas bisnis ditolak oleh database atau service boundary.
 - Record yang sudah diposting tidak dapat diubah tanpa reversal.
+- `outbox_events.id` unik dan satu event tidak boleh menghasilkan lebih dari satu versi aktif pada replica.
+- Nilai keuangan pada replica harus sama dengan snapshot sumber untuk field yang dicerminkan.
+- Penghapusan retensi hanya berlaku pada database replica.

@@ -51,6 +51,7 @@ Menerima barang, menghitung stok, melakukan transfer, dan mencatat penyesuaian d
 - Pemasok, purchase order sederhana, dan penerimaan barang.
 - Dashboard dan laporan operasional utama.
 - Operasi offline sementara dengan sinkronisasi aman.
+- Replica operasional sanitasi per outlet untuk kebutuhan demo, analytics terbatas, atau integrasi non-authoritative.
 
 ## 4. Bukan MVP
 
@@ -158,6 +159,20 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 - Rekonsiliasi shift dan selisih kas.
 - Rekonsiliasi pembayaran non-tunai dan selisih settlement.
 
+### Replica operasional
+
+- Setiap outlet memiliki switch replica yang default-nya `OFF` dan hanya dapat diubah pemilik.
+- Saat `OFF`, transaksi hanya disimpan pada database utama.
+- Saat `ON`, transaksi tetap disimpan pada database utama lalu dikirim secara asynchronous ke database replica melalui outbox.
+- Database replica mempertahankan nilai penjualan, diskon, pajak, service charge, pembayaran, void, dan refund sesuai sumber.
+- Database replica tidak menerima identitas pelanggan, HPP, laba, kredensial, PIN, token, atau catatan internal.
+- Switch `OFF` tidak menghapus data lama dan tidak membatalkan event yang sudah antre.
+- Transaksi yang pernah masuk replica tetap menerima event void, refund, dan reversal walaupun switch kemudian `OFF`.
+- Transaksi baru ketika switch `OFF` tidak masuk replica; backfill historis bukan MVP.
+- Data replica disimpan 30 hari lalu dihapus otomatis tanpa memengaruhi database utama.
+- Laporan pajak, laporan resmi, dan rekonsiliasi keuangan hanya membaca database utama.
+- Semua halaman dan ekspor replica memakai label `Replica — Non-authoritative`.
+
 ## 6. Aturan pengalaman pengguna
 
 - Satu tugas utama per halaman.
@@ -177,3 +192,5 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 - Selisih total penjualan POS dan backoffice adalah nol setelah sinkronisasi selesai.
 - Setiap perubahan stok dapat dilacak ke sumbernya.
 - Penutupan shift dapat direkonsiliasi tanpa spreadsheet tambahan.
+- Kegagalan replica tidak menggagalkan penjualan dan retry tidak membuat record duplikat.
+- Nilai transaksi pada replica sama dengan sumber untuk seluruh field yang dicerminkan.

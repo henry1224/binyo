@@ -35,6 +35,7 @@ flowchart LR
 - Ledger stok, opname, penyesuaian, transfer, pemasok, PO, dan penerimaan.
 - Dashboard dan laporan operasional.
 - Operasi offline sementara dengan sinkronisasi idempotent.
+- Replica operasional sanitasi dengan switch per outlet dan retensi 30 hari.
 
 ### Struktur menu backoffice
 
@@ -70,6 +71,10 @@ Master data kecil, pembelian, pelanggan, dan proses transfer tidak menjadi menu 
 - Shift offline baru final setelah seluruh urutan transaksi sampai batas penutupan diterima server.
 - Target operasi offline adalah satu shift atau delapan jam; perangkat tidak dapat membuka shift berikutnya sebelum sinkronisasi aman.
 - Semua data bisnis dibatasi `business_id` dan izin outlet.
+- Database utama selalu menjadi sumber kebenaran; POS tidak pernah menulis langsung ke database replica.
+- Saat switch replica outlet aktif, commit transaksi utama membuat outbox event yang dikirim worker ke database replica.
+- Replica mempertahankan nominal transaksi asli, tetapi tidak menerima identitas pelanggan, HPP, laba, kredensial, atau catatan internal.
+- Laporan resmi dan pajak hanya membaca database utama; replica selalu berlabel non-authoritative.
 
 Detail: [`architecture/data-model.md`](architecture/data-model.md).
 
@@ -84,6 +89,8 @@ Detail: [`architecture/data-model.md`](architecture/data-model.md).
 | Koreksi stok | Ya | Ya | Tidak | Sesuai izin |
 | Tutup shift orang lain | Ya | Ya | Tidak | Tidak |
 | Lihat laba | Ya | Opsional | Tidak | Tidak |
+| Kelola switch replica | Ya | Tidak | Tidak | Tidak |
+| Lihat laporan replica | Ya | Opsional | Tidak | Tidak |
 
 Hak akses disimpan sebagai kemampuan dan ditugaskan per outlet. Nama peran hanya preset; tab dan tindakan POS mengikuti izin pengguna. Pembatalan transaksi dan pembalikan pembayaran membutuhkan PIN pemilik atau manajer serta alasan.
 

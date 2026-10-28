@@ -301,6 +301,8 @@ Binyo mempertahankan permission berisiko, bukan seluruh kombinasi menu:
 - `report.view_inventory`
 - `report.view_cost`
 - `report.export`
+- `replica.view`
+- `replica.manage`
 - `staff.manage`
 - `device.manage`
 - `integration.publish`

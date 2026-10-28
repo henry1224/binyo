@@ -140,6 +140,14 @@ Jika perangkat belum menyinkron melewati batas yang ditetapkan bisnis, aplikasi 
 
 Target offline pilot adalah satu shift atau delapan jam. Setelah batas terlewati, aplikasi menampilkan peringatan kritis dan tetap menjaga command lokal; shift berikutnya tidak dapat dibuka sebelum sinkronisasi berhasil.
 
+### Replica operasional
+
+- POS selalu mengirim transaksi ke API utama dan tidak memiliki kredensial database replica.
+- Switch replica tidak tampil pada aplikasi kasir; pengaturan hanya tersedia pada backoffice pemilik.
+- Server menentukan kebutuhan mirror ketika command pertama kali diterima.
+- Kegagalan replica tidak mengubah status penjualan, pembayaran, struk, shift, atau antrean sync POS.
+- Kasir tidak melihat atau memilih sumber laporan utama/replica.
+
 ## 8. Void, refund, dan koreksi
 
 - `Void`: membatalkan transaksi sebelum atau segera setelah finalisasi sesuai aturan bisnis.
@@ -216,3 +224,5 @@ Kalibrasi perangkat nyata wajib dilakukan sebelum pilot. Simulator tidak cukup u
 - Status offline dan antrean sinkronisasi selalu terlihat.
 - Void, refund, dan diskon berizin tercatat pada audit log.
 - Shift offline tidak berstatus final di server sebelum seluruh transaksi sampai batas urutan penutupan tersinkron.
+- Switch `OFF` tidak membuat event replica; switch `ON` membuat satu event idempotent setelah transaksi utama berhasil.
+- Replica gagal tidak menggagalkan transaksi utama dan dapat diproses ulang tanpa duplikasi.

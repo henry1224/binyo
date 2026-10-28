@@ -15,6 +15,8 @@ Backoffice web ----+
                    +---- API / modular monolith ---- PostgreSQL
 POS mobile --------+             |
                                  +---- Queue worker
+                                 |        |
+                                 |        +---- Sanitized replica PostgreSQL
                                  +---- Object storage
                                  +---- Payment/integration adapters
 
@@ -29,6 +31,7 @@ Modular monolith cukup untuk MVP. Microservice menambah deployment, transaksi te
 - Backoffice: Inertia + Vue + TypeScript.
 - POS mobile: Flutter, Android-first, responsif untuk phone, tablet, dan terminal POS.
 - Database utama: PostgreSQL.
+- Database replica: PostgreSQL terpisah dengan kredensial dan retensi sendiri.
 - Database lokal mobile: SQLite.
 - Queue/cache: mulai dari database queue; Redis ditambahkan saat beban atau kebutuhan realtime membuktikannya.
 - File: S3-compatible object storage untuk gambar produk dan ekspor.
@@ -48,8 +51,9 @@ Flutter 3.47 mendukung Android API 24-37. Binyo menargetkan perangkat baru Andro
 - Reporting: read model dan ekspor.
 - Sync: bootstrap, delta, upload transaksi, retry, dan konflik.
 - Audit: tindakan sensitif dan histori perubahan.
+- Replica: outbox, sanitasi payload, delivery idempotent, dan retensi.
 
-Modul tetap berada dalam satu aplikasi dan satu database. Batas modul mencegah query silang tanpa aturan, bukan membuat service terpisah.
+Modul domain tetap berada dalam satu aplikasi dan database utama. Database replica hanya menyimpan proyeksi turunan read-only; batas modul tidak membuat service bisnis terpisah.
 
 ## 4. API minimum
 
@@ -74,6 +78,7 @@ Modul tetap berada dalam satu aplikasi dan satu database. Batas modul mencegah q
 
 - CRUD terbatas untuk outlet, pengguna, produk, kategori, modifier, pemasok, dan pelanggan.
 - Endpoint workflow terpisah untuk `post`, `receive`, `send`, `close`, `void`, dan `refund`.
+- Pengaturan switch replica per outlet hanya untuk permission `replica.manage`.
 - Endpoint laporan bersifat read-only dan dapat menghasilkan ekspor async.
 
 Nama endpoint final mengikuti konvensi proyek. Daftar ini menetapkan kemampuan, bukan kontrak final.
@@ -110,6 +115,10 @@ Nama endpoint final mengikuti konvensi proyek. Daftar ini menetapkan kemampuan, 
 - Otorisasi dicek server pada setiap tindakan, termasuk tindakan yang sudah disembunyikan UI.
 - Rate limit untuk login, PIN approval, dan endpoint berisiko.
 - Audit wajib untuk login, perubahan izin, perubahan harga, diskon, void, refund, koreksi stok, dan penutupan shift.
+- Perubahan switch replica wajib diaudit dengan outlet, pelaku, nilai sebelum/sesudah, alasan, dan waktu.
+- Kredensial replica tidak tersedia pada POS, browser, atau proses laporan resmi.
+- Worker replica hanya memiliki hak baca/update pada outbox utama dan hak tulis terbatas pada database replica; database replica tidak memiliki akses balik ke database utama.
+- Payload replica memakai whitelist tetap dan tidak memuat identitas pelanggan, HPP, laba, token, PIN, atau catatan internal.
 - Binyo tidak menyimpan PAN kartu, CVV, atau kredensial pembayaran pelanggan.
 - Backup terenkripsi, diuji restore, dan memiliki retensi tertulis.
 
@@ -118,8 +127,9 @@ Nama endpoint final mengikuti konvensi proyek. Daftar ini menetapkan kemampuan, 
 - Health check untuk aplikasi, database, queue, storage, dan integrasi pembayaran.
 - Structured logs dengan request ID, business ID, outlet ID, device ID, dan actor ID bila tersedia.
 - Error tracking untuk web, API, worker, dan mobile.
-- Metric minimum: error rate, latency, queue delay, sync backlog, payment failures, dan duplicate attempts.
+- Metric minimum: error rate, latency, queue delay, sync backlog, replica backlog/failures, payment failures, dan duplicate attempts.
 - Backup harian dan point-in-time recovery sesuai kemampuan hosting.
+- Database replica tidak menjadi bagian restore bisnis; data dapat dibangun ulang hanya dari event yang masih tersedia dan dihapus otomatis setelah 30 hari.
 - Restore drill dilakukan sebelum pilot menyimpan data produksi penting.
 
 ## 8. Target non-fungsional awal
@@ -132,6 +142,7 @@ Nama endpoint final mengikuti konvensi proyek. Daftar ini menetapkan kemampuan, 
 | API submit penjualan p95 | <= 1 detik, tidak termasuk payment provider |
 | Pemulihan setelah app restart | Tidak kehilangan command yang sudah diterima UI |
 | Sinkronisasi | Retry otomatis dengan backoff dan status terlihat |
+| Delivery replica | p95 <= 5 menit; kegagalan tidak memblokir penjualan |
 | Aksesibilitas web | Keyboard, focus visible, kontras WCAG AA |
 | Ketersediaan pilot | Target ditetapkan setelah pilihan hosting |
 
@@ -142,6 +153,7 @@ Nama endpoint final mengikuti konvensi proyek. Daftar ini menetapkan kemampuan, 
 - Database test: constraint tenant, idempotency, nomor struk, dan posting ledger.
 - Feature test: login, izin, penjualan, refund, shift, penerimaan, opname, dan laporan.
 - Sync test: retry, urutan terbalik, duplikasi, putus jaringan, dan restart aplikasi.
+- Replica test: switch ON/OFF, primary failure, mirror failure, retry, idempotency, koreksi setelah OFF, field sanitasi, dan purge retensi.
 - Hardware test: printer, scanner, cash drawer, dan perangkat Android target.
 - End-to-end pilot: buka shift sampai tutup shift serta rekonsiliasi laporan.
 

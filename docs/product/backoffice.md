@@ -84,6 +84,7 @@ Semua laporan memakai pola sama: rentang tanggal, outlet, filter terkait, ringka
 - Pajak dan service charge.
 - Metode pembayaran.
 - Nomor struk dan template struk.
+- Replica data per outlet.
 - Alasan void, refund, koreksi stok, dan kas keluar.
 - Integrasi.
 - Impor/ekspor data.
@@ -104,6 +105,8 @@ Loyalty, kupon, komisi, waralaba, dan marketing automation ditunda.
 
 Binyo tidak membuat menu terpisah untuk setiap dimensi laporan. Satu laporan penjualan dapat dikelompokkan berdasarkan produk, kategori, outlet, kasir, metode pembayaran, perangkat, hari, atau channel.
 
+`Laporan > Replica operasional` dipisahkan dari laporan utama dan selalu menampilkan banner `Replica — Non-authoritative`. Halaman ini hanya menampilkan field whitelist, status sinkronisasi, periode retensi, dan ekspor replica; laporan resmi serta pajak tidak memiliki pilihan sumber data.
+
 ### Persediaan
 
 - `Stok`: posisi dan histori per item.
@@ -119,6 +122,15 @@ Binyo tidak membuat menu terpisah untuk setiap dimensi laporan. Satu laporan pen
 - `Refund & Void`: koreksi dengan alasan dan persetujuan.
 - `Pelanggan`: data minimum dan riwayat berizin.
 - `Rekonsiliasi Pembayaran`: cocokkan nominal POS dengan settlement penyedia.
+
+### Replica data
+
+- Switch berada pada `Pengaturan > Replica data` dan berlaku per outlet.
+- Default `OFF`; hanya pemilik dengan permission `replica.manage` yang dapat mengubahnya.
+- Halaman menampilkan status, waktu pengiriman terakhir, jumlah event antre/gagal, dan retensi tetap 30 hari.
+- Perubahan switch meminta konfirmasi yang menyebut outlet dan dampaknya, lalu masuk audit log.
+- `OFF` menghentikan transaksi baru, bukan menghapus data replica atau membatalkan event yang sudah antre.
+- Tidak tersedia editor field atau rumus nominal; whitelist ditetapkan sistem agar konfigurasi tetap sederhana.
 
 ## 3. Penyederhanaan dari Vireo
 
@@ -159,6 +171,8 @@ Audit lengkap: [`../references/vireo-menu-audit.md`](../references/vireo-menu-au
 | Melihat laba | Ya | Opsional | Tidak | Tidak |
 | Mengelola pengguna | Ya | Opsional | Tidak | Tidak |
 | Melihat log aktivitas | Ya | Sesuai akses | Tidak | Opsional |
+| Kelola switch replica | Ya | Tidak | Tidak | Tidak |
+| Melihat laporan replica | Ya | Opsional | Tidak | Tidak |
 
 Hak akses disimpan per kemampuan, bukan hanya nama peran. Nama peran di atas adalah preset.
 

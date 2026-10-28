@@ -15,6 +15,7 @@ Roadmap memakai milestone berbasis hasil, bukan tanggal. Estimasi dibuat setelah
 - [ ] Tentukan segmen awal, outlet pilot, perangkat, printer, pembayaran, dan pajak.
 - [ ] Review serta setujui product requirements.
 - [ ] Review struktur menu, model data, dan batas MVP.
+- [ ] Review kontrak replica: field whitelist, switch per outlet, retensi, permission, dan larangan sumber laporan resmi.
 - [ ] Buat contoh data produk, transaksi, stok, dan struk.
 - [ ] Pilih 5-10 alur penerimaan utama untuk demo.
 
@@ -28,6 +29,7 @@ Selesai bila tidak ada keputusan bisnis kritis yang diserahkan ke developer saat
 - [ ] Produk, kategori, varian/SKU, modifier, pajak, dan harga outlet.
 - [ ] Impor produk CSV minimum.
 - [ ] Audit log dasar.
+- [ ] Switch replica per outlet dan transactional outbox dalam kondisi default `OFF`.
 - [ ] CI, environment, backup, error tracking, dan seed demo.
 
 Selesai bila pemilik dapat menyiapkan satu outlet dan katalog siap jual tanpa mengubah database manual.
@@ -61,6 +63,7 @@ Selesai bila setiap perubahan stok pilot dapat ditelusuri ke transaksi sumber.
 - [ ] Database lokal dan durable command queue.
 - [ ] Cursor sync, retry, idempotency, tombstone, dan status sinkronisasi.
 - [ ] Skenario putus jaringan, restart, jam perangkat salah, dan payload duplikat.
+- [ ] Worker replica, sanitasi field, retry idempotent, koreksi setelah switch `OFF`, dan purge 30 hari.
 - [ ] Uji printer/scanner/cash drawer pada perangkat nyata.
 - [ ] Performance, security, backup restore, dan audit akses.
 
@@ -73,6 +76,7 @@ Selesai bila penjualan offline tersinkron tanpa duplikasi atau kehilangan data.
 - [ ] Laba kotor perkiraan dengan penjelasan sumber biaya.
 - [ ] Rekonsiliasi pembayaran non-tunai manual.
 - [ ] Ekspor CSV.
+- [ ] Laporan replica terpisah dengan label `Replica — Non-authoritative`.
 - [ ] UAT, pelatihan singkat, SOP gangguan, dan checklist go-live.
 - [ ] Pilot terbatas dan evaluasi masalah nyata.
 
