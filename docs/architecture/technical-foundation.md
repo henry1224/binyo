@@ -2,7 +2,7 @@
 title: "Fondasi Teknis"
 subtitle: "Batas sistem, API, sinkronisasi, keamanan, dan operasi"
 author: "Binyo POS"
-date: "2026-10-27"
+date: "2026-10-28"
 status: "Rekomendasi, belum dikunci"
 ---
 
@@ -27,13 +27,13 @@ Modular monolith cukup untuk MVP. Microservice menambah deployment, transaksi te
 
 - Backend/API: Laravel.
 - Backoffice: Inertia + Vue + TypeScript.
-- POS mobile: Flutter, Android-first.
+- POS mobile: Flutter, Android-first, responsif untuk phone, tablet, dan terminal POS.
 - Database utama: PostgreSQL.
 - Database lokal mobile: SQLite.
 - Queue/cache: mulai dari database queue; Redis ditambahkan saat beban atau kebutuhan realtime membuktikannya.
 - File: S3-compatible object storage untuk gambar produk dan ekspor.
 
-Keputusan Flutter harus divalidasi memakai printer dan scanner target. Dukungan hardware nyata lebih penting daripada preferensi framework.
+Flutter 3.47 mendukung Android API 24-37. Binyo menargetkan perangkat baru Android 13+; perangkat Android 11-12 hanya diterima bila masih mendapat patch vendor. Keputusan Flutter tetap harus divalidasi memakai printer, scanner, dan cash drawer target karena dukungan hardware nyata lebih penting daripada preferensi framework.
 
 ## 3. Batas modul backend
 
@@ -138,6 +138,7 @@ Nama endpoint final mengikuti konvensi proyek. Daftar ini menetapkan kemampuan, 
 ## 9. Strategi test minimum
 
 - Unit test: perhitungan total, pajak, diskon, biaya, dan kembalian.
+- Unit/database test: alokasi split bill, pembayaran parsial, reversal pembayaran, dan larangan double allocation.
 - Database test: constraint tenant, idempotency, nomor struk, dan posting ledger.
 - Feature test: login, izin, penjualan, refund, shift, penerimaan, opname, dan laporan.
 - Sync test: retry, urutan terbalik, duplikasi, putus jaringan, dan restart aplikasi.
@@ -148,9 +149,5 @@ Nama endpoint final mengikuti konvensi proyek. Daftar ini menetapkan kemampuan, 
 
 - Hosting dan region data.
 - Penyedia QRIS/payment gateway.
-- Printer/scanner target.
-- Android minimum.
-- Batas durasi offline.
-- Kebijakan stok minus.
-- Metode valuasi biaya final.
+- Model perangkat Android serta printer 58/80 mm yang lulus proof-of-concept.
 - Integrasi akunting dan bentuk ekspor.

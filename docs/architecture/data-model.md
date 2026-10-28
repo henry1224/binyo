@@ -2,7 +2,7 @@
 title: "Model Data"
 subtitle: "Entitas, relasi, ledger, snapshot, dan constraint"
 author: "Binyo POS"
-date: "2026-10-27"
+date: "2026-10-28"
 status: "Draft konseptual"
 ---
 
@@ -64,6 +64,7 @@ flowchart TD
 - `address`
 - `timezone`
 - `receipt_prefix`
+- `prevent_negative_stock`, default aktif
 - `status`
 
 ### users
@@ -77,6 +78,8 @@ flowchart TD
 ### roles, permissions, user_outlet_roles
 
 Peran adalah kumpulan izin. Penugasan menyebut pengguna, outlet, dan peran agar seorang manajer tidak otomatis melihat semua outlet.
+
+Persetujuan PIN menyimpan tindakan, record, peminta, penyetuju, outlet, perangkat, alasan, dan waktu. Mengetahui PIN tidak mengubah role pengguna aktif.
 
 ### devices
 
@@ -108,7 +111,7 @@ Peran adalah kumpulan izin. Penugasan menyebut pengguna, outlet, dan peran agar 
 - `sku`, `barcode`, `name`
 - `base_unit_id`
 - `sell_price`, `default_purchase_cost`
-- `track_stock`, `allow_negative_stock`
+- `track_stock`
 - `is_default`, `status`
 
 Produk tanpa pilihan memiliki satu varian default. Semua baris penjualan menunjuk varian, bukan langsung ke produk.
@@ -132,6 +135,16 @@ Satu SKU memiliki satu base unit. Konversi tidak boleh melintasi jenis satuan ta
 - `is_available`
 - `price_override` opsional
 - `low_stock_threshold` opsional
+- `preparation_station_id` opsional
+
+### preparation_stations
+
+- `id`, `business_id`, `outlet_id`
+- `name`, misalnya `Bar` atau `Dapur`
+- `printer_profile_id` opsional
+- `status`
+
+Kitchen ticket dikelompokkan berdasarkan tujuan persiapan. Koreksi setelah ticket tercetak menghasilkan ticket koreksi yang menunjuk transaksi dan baris asal.
 
 ### modifier_groups dan modifier_options
 
@@ -152,7 +165,7 @@ Resep selalu disimpan dalam base unit komponen. HPP resep per outlet dihitung da
 - `id`, `business_id`, `outlet_id`, `device_id`, `shift_id`
 - `customer_id` opsional
 - `receipt_number`, `device_sequence`, `idempotency_key`
-- `status`: `draft`, `completed`, `voided`, `partially_refunded`, `refunded`
+- `status`: `open`, `partially_paid`, `completed`, `voided`, `partially_refunded`, `refunded`
 - `subtotal`, `discount_total`, `tax_total`, `service_charge_total`, `grand_total`
 - `created_at_device`, `created_at_server`, `synced_at`
 - `cashier_user_id`
@@ -162,7 +175,7 @@ Resep selalu disimpan dalam base unit komponen. HPP resep per outlet dihitung da
 - `id`, `sale_id`, `product_variant_id`
 - Snapshot: `product_name`, `variant_name`, `sku`, `unit`, `unit_price`, `unit_cost`
 - Snapshot pajak: `tax_name`, `tax_rate`, `tax_calculation_type`
-- `quantity`, `discount_total`, `tax_total`, `line_total`
+- `quantity`, `discount_total`, `service_charge_total`, `tax_total`, `line_total`
 - `note`
 
 ### sale_line_modifiers
@@ -173,9 +186,23 @@ Resep selalu disimpan dalam base unit komponen. HPP resep per outlet dihitung da
 ### payments
 
 - `id`, `sale_id`, `payment_method_id`
-- `amount`, `status`, `external_reference`
+- `amount`, `status`: `draft`, `completed`, atau `reversed`
+- `tendered_amount` dan `change_amount` untuk tunai
+- `external_reference`
 - `verification_status`: `recorded`, `matched`, `disputed`
 - `idempotency_key`, `paid_at`, `matched_at`
+- `reversal_of_payment_id`, `reversal_reason_id`, dan `approved_by` opsional
+
+### payment_allocations
+
+- `payment_id`, `sale_line_id`
+- `quantity`, `amount`
+
+Split bill memakai alokasi pembayaran, bukan menyalin atau membatalkan transaksi. Satu pembayaran dapat menutup beberapa baris; satu baris dengan jumlah lebih dari satu dapat dibagi ke beberapa pembayaran. Transaksi menjadi `completed` hanya bila seluruh grand total telah ditutup pembayaran `completed`.
+
+Diskon tingkat transaksi, service charge, pajak, dan pembulatan dialokasikan proporsional ke baris sebelum split. Sisa pembulatan ditempatkan pada baris terakhir agar jumlah seluruh `sale_lines.line_total` sama dengan `sales.grand_total`.
+
+Pembayaran salah dikoreksi dengan record reversal dan pembayaran pengganti dalam satu transaksi database. Record lama tidak dihapus. Selisih pembulatan ditempatkan pada alokasi pembayaran terakhir.
 
 ### payment_reconciliations
 
@@ -203,6 +230,8 @@ Tidak ada hard delete untuk `sales`, `sale_lines`, `payments`, atau `refunds`.
 - `status`: `open`, `closing_pending_sync`, `closed`
 
 Server hanya mengubah shift menjadi `closed` setelah seluruh transaksi perangkat sampai `closing_device_sequence` diterima. Penutupan offline tetap tersimpan lokal sebagai `closing_pending_sync`.
+
+Permintaan penutupan ditolak bila perangkat masih memiliki transaksi `open`, `partially_paid`, pembayaran `draft`, atau command transaksi gagal yang belum diselesaikan. Bill harus dilunasi atau di-void dengan persetujuan sebelum penutupan.
 
 ### cash_movements
 
@@ -252,7 +281,7 @@ Aturan biaya pergerakan:
 - Penyesuaian stok keluar memakai biaya rata-rata saat posting.
 - Penyesuaian stok masuk memakai biaya rata-rata saat posting atau biaya eksplisit untuk opening stock.
 - Jika stok sebelum penerimaan nol, biaya rata-rata baru sama dengan biaya penerimaan.
-- Jika stok minus diizinkan, penjualan memakai biaya terakhir sebagai perkiraan dan penerimaan berikutnya tidak menulis ulang HPP transaksi lama.
+- Jika `outlets.prevent_negative_stock` dinonaktifkan, penjualan boleh membuat saldo negatif, memakai biaya terakhir sebagai perkiraan, dan ditandai untuk rekonsiliasi. Penerimaan berikutnya tidak menulis ulang HPP transaksi lama.
 
 ### stock_counts dan stock_count_lines
 
@@ -354,6 +383,9 @@ Idempotency pada transaksi dan pembayaran memakai unique constraint. Validasi ap
 - Barcode unik per bisnis bila diisi.
 - `idempotency_key` transaksi unik per bisnis.
 - `idempotency_key` pembayaran unik per bisnis.
+- Total alokasi satu pembayaran harus sama dengan nominal pembayaran `completed`.
+- Total pembayaran aktif tidak boleh melebihi grand total, kecuali selisih tunai yang dicatat sebagai kembalian dan bukan alokasi penjualan.
+- Baris atau jumlah item yang sudah teralokasi tidak boleh dialokasikan kembali.
 - Nomor struk unik per outlet.
 - Satu kombinasi `device_id` dan `device_sequence` hanya boleh menghasilkan satu transaksi.
 - Jumlah, harga, diskon, pajak, dan total divalidasi server.

@@ -2,7 +2,7 @@
 title: "Dokumentasi Binyo POS"
 subtitle: "Indeks produk, arsitektur, delivery, dan aturan kerja"
 author: "Binyo POS"
-date: "2026-10-27"
+date: "2026-10-28"
 status: "Draft"
 ---
 
@@ -44,20 +44,23 @@ Binyo adalah sistem POS untuk operasional retail dan F&B ringan. Dokumentasi mem
 
 - Satu produk melayani backoffice web dan POS mobile.
 - Multi-outlet didukung oleh model data, tetapi pilot dapat dimulai dari satu outlet.
+- Pilot pertama adalah kedai kopi dengan satu outlet, satu perangkat utama, dan satu perangkat cadangan bila tersedia.
+- Peran bersifat dinamis per outlet; izin yang sama mengontrol menu backoffice, tab POS, dan tindakan sensitif.
+- Split bill per item termasuk MVP tanpa membuat transaksi pembatalan baru.
 - Penjualan harus tetap dapat dicatat saat internet terputus sementara.
 - Penjualan, pembayaran, dan stok memakai histori; data operasional penting tidak dihapus permanen.
 - Akunting penuh, waralaba, komisi, kampanye WhatsApp, dan marketplace integration bukan MVP.
 
 ## Pertanyaan yang harus dijawab sebelum pengembangan
 
-- [ ] Segmen awal: retail, F&B, atau hybrid?
-- [ ] Pilot dimulai dari berapa outlet dan berapa perangkat kasir?
-- [ ] Perangkat target: Android phone, Android tablet, atau keduanya?
-- [ ] Printer yang dipakai: Bluetooth, USB, atau LAN? Sebutkan modelnya.
-- [ ] Barcode scanner, cash drawer, customer display, dan kitchen printer diperlukan?
-- [ ] Pembayaran awal: tunai, kartu, transfer, QRIS statis, atau QRIS dinamis?
+- [x] Segmen awal: kedai kopi/F&B cafe.
+- [x] Pilot: satu outlet, satu perangkat utama, dan satu perangkat cadangan bila tersedia; sistem mendukung dua atau tiga outlet.
+- [x] Tampilan POS responsif untuk Android phone, tablet, dan terminal POS; model perangkat pilot belum dipilih.
+- [ ] Pilih model printer pilot; aplikasi menyiapkan profil Bluetooth, USB, dan LAN serta template 58/80 mm.
+- [ ] Tentukan kebutuhan scanner, cash drawer, dan kitchen printer pada outlet pilot; customer display dan kitchen display ditunda.
+- [x] Pembayaran awal: tunai, kartu manual, transfer manual, dan QRIS manual; QRIS dinamis ditunda.
 - [ ] Pajak yang dipakai: PB1, PPN, service charge, atau kombinasi?
-- [ ] Apakah stok bahan baku/resep wajib pada rilis pertama?
+- [x] Stok bahan baku, resep ringan, dan HPP rata-rata bergerak wajib pada rilis pertama.
 - [ ] Apakah data lama perlu diimpor dari Vireo atau spreadsheet?
 - [ ] Integrasi akunting apa yang dibutuhkan: ekspor CSV, Accurate, Jurnal, atau lainnya?
 

@@ -2,7 +2,7 @@
 title: "Struktur Backoffice"
 subtitle: "Navigasi, akses, laporan, dan arah visual"
 author: "Binyo POS"
-date: "2026-10-27"
+date: "2026-10-28"
 status: "Draft"
 ---
 
@@ -59,6 +59,8 @@ Merek dan atribut tidak menjadi menu terpisah pada MVP. Keduanya ditambahkan han
 ### Laporan
 
 - Penjualan.
+- Penjualan rinci per transaksi dan item.
+- Total item terjual per produk dan varian.
 - Produk dan kategori.
 - Pembayaran.
 - Kasir dan shift.
@@ -150,6 +152,7 @@ Audit lengkap: [`../references/vireo-menu-audit.md`](../references/vireo-menu-au
 | Menjual | Ya | Ya | Ya | Tidak |
 | Memberi diskon manual | Ya | Ya | Sesuai batas | Tidak |
 | Void/refund | Ya | Ya | Dengan persetujuan | Tidak |
+| Balikkan pembayaran salah | Ya | Ya | Dengan persetujuan | Tidak |
 | Menutup shift orang lain | Ya | Ya | Tidak | Tidak |
 | Menerima pembelian | Ya | Ya | Tidak | Ya |
 | Koreksi stok | Ya | Ya | Tidak | Sesuai izin |

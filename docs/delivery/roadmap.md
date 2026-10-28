@@ -2,7 +2,7 @@
 title: "Roadmap"
 subtitle: "Milestone, acceptance gate, dan urutan pilot"
 author: "Binyo POS"
-date: "2026-10-27"
+date: "2026-10-28"
 status: "Draft"
 ---
 
@@ -17,6 +17,8 @@ Roadmap memakai milestone berbasis hasil, bukan tanggal. Estimasi dibuat setelah
 - [ ] Review struktur menu, model data, dan batas MVP.
 - [ ] Buat contoh data produk, transaksi, stok, dan struk.
 - [ ] Pilih 5-10 alur penerimaan utama untuk demo.
+
+Keputusan yang sudah diambil: kedai kopi, satu outlet pilot, dukungan perluasan dua atau tiga outlet, pembayaran manual, split bill per item, stok minus dikendalikan per outlet, dan HPP rata-rata bergerak per SKU/outlet. Model hardware serta pajak pilot masih terbuka.
 
 Selesai bila tidak ada keputusan bisnis kritis yang diserahkan ke developer saat coding.
 
@@ -35,7 +37,9 @@ Selesai bila pemilik dapat menyiapkan satu outlet dan katalog siap jual tanpa me
 - [ ] Login/perangkat dan bootstrap.
 - [ ] Katalog, pencarian, barcode, favorit, keranjang, modifier, dan diskon.
 - [ ] Pembayaran tunai serta non-tunai manual.
+- [ ] Split bill per item, pembayaran parsial, dan koreksi pembayaran berizin.
 - [ ] Struk thermal dan share receipt.
+- [ ] Kitchen ticket berbasis tujuan produk bila dibutuhkan outlet pilot.
 - [ ] Shift, kas masuk/keluar, dan penutupan.
 - [ ] Daftar transaksi, void, dan refund berizin.
 
@@ -65,7 +69,7 @@ Selesai bila penjualan offline tersinkron tanpa duplikasi atau kehilangan data.
 ## M5 - Laporan dan pilot
 
 - [ ] Dashboard tindakan harian.
-- [ ] Laporan penjualan, pembayaran, produk, stok, pembelian, dan shift.
+- [ ] Laporan penjualan rinci, total item terjual, pembayaran, produk, stok, pembelian, dan shift.
 - [ ] Laba kotor perkiraan dengan penjelasan sumber biaya.
 - [ ] Rekonsiliasi pembayaran non-tunai manual.
 - [ ] Ekspor CSV.
@@ -84,6 +88,7 @@ Urutan ditentukan data penggunaan, bukan asumsi:
 - Ekspor atau integrasi akunting.
 - Produksi/kitting lebih lengkap.
 - Kitchen display atau manajemen meja.
+- Customer display.
 - Toko online dan omnichannel.
 
 ## Gerbang perubahan scope

@@ -2,7 +2,7 @@
 title: "Validasi HPP VireoPOS dan Binyo"
 subtitle: "Bukti UI, hipotesis, rumus target, skenario uji, dan gerbang penerimaan"
 author: "Binyo POS"
-date: "2026-10-27"
+date: "2026-10-28"
 status: "Draft"
 ---
 
@@ -165,7 +165,7 @@ Fitur landed cost dapat ditunda; nilai alokasi menjadi nol sampai fitur diaktifk
 
 ## 6. Stok minus
 
-Binyo MVP melarang transaksi yang membuat stok SKU terlacak menjadi negatif. Dukungan stok minus dan revaluation ditunda karena membutuhkan kebijakan rekonsiliasi biaya terpisah.
+Setiap outlet memiliki pengaturan larangan stok minus yang aktif secara default. Jika dinonaktifkan, penjualan memakai average cost terakhir, snapshot HPP ditandai `estimated`, dan saldo negatif masuk daftar rekonsiliasi. Penerimaan berikutnya tidak mengubah snapshot transaksi lama; revaluation historis bukan MVP.
 
 ## 7. Jurnal ekspor target
 
@@ -206,7 +206,7 @@ Refund dan reversal membentuk entry lawan; record asli tidak dihapus.
 | HPP-11 | Refund barang kembali | Stok dan HPP memakai transaksi asal | Belum diuji |
 | HPP-12 | Void dan pembatalan | Tidak ada movement/jurnal yatim | Belum diuji |
 | HPP-13 | Adjustment masuk dan keluar | Qty, nilai, alasan, audit | Belum diuji |
-| HPP-14 | Penjualan melebihi stok tersedia | Transaksi ditolak tanpa movement atau jurnal | Belum diuji |
+| HPP-14 | Penjualan melebihi stok tersedia | Ditolak saat larangan aktif; saat nonaktif, HPP estimated dan saldo minus tercatat | Belum diuji |
 | HPP-15 | Hitung ulang HPP | Batas perubahan transaksi lama/baru | Belum diuji |
 | HPP-16 | Laporan laba dan jurnal | HPP laporan = debit COGS = kredit persediaan | Belum diuji |
 | HPP-17 | Pembulatan bahan per ml/gr | Total ledger tidak bocor karena pembulatan | Belum diuji |
@@ -222,7 +222,7 @@ Refund dan reversal membentuk entry lawan; record asli tidak dihapus.
 - Transfer tidak menciptakan atau menghilangkan nilai persediaan, kecuali selisih yang diposting eksplisit.
 - Refund, void, pembatalan penerimaan, dan bongkar produksi memakai reversal terlacak.
 - Semua nilai menggunakan fixed decimal dan aturan pembulatan yang diuji.
-- Laporan menandai HPP kosong atau nol.
+- Laporan menandai HPP kosong, nol, atau perkiraan.
 
 ## 10. Batas validasi
 

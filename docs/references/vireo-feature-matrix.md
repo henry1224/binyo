@@ -2,7 +2,7 @@
 title: "Matriks Fitur VireoPOS"
 subtitle: "Inventaris 1:1 menu, halaman, field, aksi, permission, dan pemetaan Binyo"
 author: "Binyo POS"
-date: "2026-10-27"
+date: "2026-10-28"
 status: "Draft"
 ---
 
@@ -284,10 +284,13 @@ Daftar berikut berasal dari Grup Akses. Audit layar aplikasi POS Vireo belum dil
 Binyo mempertahankan permission berisiko, bukan seluruh kombinasi menu:
 
 - `catalog.manage`
+- `sale.sell`
 - `price.override`
 - `discount.apply`
 - `sale.void`
 - `sale.refund`
+- `payment.reverse`
+- `shift.close`
 - `shift.close_other`
 - `cash.manage`
 - `inventory.adjust`

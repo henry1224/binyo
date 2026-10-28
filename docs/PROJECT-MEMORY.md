@@ -9,6 +9,8 @@ Gunakan file ini sebagai peta dokumen dan ringkasan keputusan aktif. Detail leng
 | Backoffice web | Pemilik, manajer, gudang | Katalog, stok, pembelian, laporan, outlet, dan akses | [`product/backoffice.md`](product/backoffice.md) |
 | POS mobile | Kasir, manajer outlet | Penjualan, pembayaran, shift, struk, dan sinkronisasi | [`product/pos-mobile.md`](product/pos-mobile.md) |
 
+Pilot pertama menargetkan kedai kopi: satu outlet, satu pemilik, satu manajer, satu atau lebih kasir, satu atau lebih staf gudang, satu perangkat utama, dan satu perangkat cadangan bila tersedia. Model data dan akses tetap mendukung perluasan menjadi dua atau tiga outlet tanpa migrasi konsep.
+
 ## 2. Alur bisnis utama
 
 ```mermaid
@@ -29,7 +31,7 @@ flowchart LR
 
 - Organisasi, outlet, pengguna, peran, dan perangkat.
 - Produk, varian/SKU, kategori, modifier, harga, pajak, dan resep ringan.
-- Penjualan, pembayaran manual, struk, shift, kas, void, dan refund.
+- Penjualan, split bill per item, pembayaran manual, struk, shift, kas, void, dan refund.
 - Ledger stok, opname, penyesuaian, transfer, pemasok, PO, dan penerimaan.
 - Dashboard dan laporan operasional.
 - Operasi offline sementara dengan sinkronisasi idempotent.
@@ -60,10 +62,13 @@ Master data kecil, pembelian, pelanggan, dan proses transfer tidak menjadi menu 
 - Setiap SKU memiliki satu base unit; satuan beli dikonversi memakai faktor yang disimpan sebagai snapshot.
 - Penerimaan barang memperbarui HPP rata-rata bergerak per SKU dan outlet.
 - Penjualan menyimpan snapshot HPP produk atau resep; histori laba tidak berubah karena pembelian berikutnya.
+- Larangan stok minus aktif secara default per outlet; bila dinonaktifkan, transaksi tetap berjalan tetapi saldo minus ditandai untuk rekonsiliasi.
+- Split bill mengalokasikan pembayaran ke baris atau sebagian jumlah item tanpa membatalkan atau menggandakan transaksi asal.
 - Transaksi selesai tidak dihapus atau ditimpa; koreksi memakai void, refund, atau reversal.
 - Idempotency transaksi dan pembayaran dilindungi unique constraint.
 - Pembayaran non-tunai manual direkonsiliasi tanpa mengubah transaksi asli.
 - Shift offline baru final setelah seluruh urutan transaksi sampai batas penutupan diterima server.
+- Target operasi offline adalah satu shift atau delapan jam; perangkat tidak dapat membuka shift berikutnya sebelum sinkronisasi aman.
 - Semua data bisnis dibatasi `business_id` dan izin outlet.
 
 Detail: [`architecture/data-model.md`](architecture/data-model.md).
@@ -75,11 +80,12 @@ Detail: [`architecture/data-model.md`](architecture/data-model.md).
 | Ubah produk/harga | Ya | Opsional | Tidak | Tidak |
 | Diskon manual | Ya | Ya | Sesuai batas | Tidak |
 | Void/refund | Ya | Ya | Dengan persetujuan | Tidak |
+| Balikkan pembayaran salah | Ya | Ya | Dengan persetujuan | Tidak |
 | Koreksi stok | Ya | Ya | Tidak | Sesuai izin |
 | Tutup shift orang lain | Ya | Ya | Tidak | Tidak |
 | Lihat laba | Ya | Opsional | Tidak | Tidak |
 
-Hak akses disimpan sebagai kemampuan. Nama peran hanya preset.
+Hak akses disimpan sebagai kemampuan dan ditugaskan per outlet. Nama peran hanya preset; tab dan tindakan POS mengikuti izin pengguna. Pembatalan transaksi dan pembalikan pembayaran membutuhkan PIN pemilik atau manajer serta alasan.
 
 ## 6. Fondasi teknis yang direkomendasikan
 
@@ -123,9 +129,7 @@ Detail: [`conventions/git-workflow.md`](conventions/git-workflow.md) dan [`conve
 
 ## 9. Keputusan terbuka
 
-- Segmen pilot belum disetujui; rekomendasi awal adalah F&B ringan dengan dukungan barang retail sederhana.
-- Jumlah outlet/perangkat dan batas durasi offline.
-- Model printer, scanner, cash drawer, dan Android minimum.
+- Model perangkat Android, printer, scanner, cash drawer, dan kebutuhan kitchen printer pilot.
 - Payment provider dan metode QRIS.
-- Pajak, service charge, aturan pembulatan, dan kebijakan stok minus.
-- Kebutuhan resep/bahan baku serta integrasi akunting.
+- Pajak, service charge, dan tarif yang berlaku pada kedai pilot.
+- Kebutuhan impor data lama serta bentuk ekspor/integrasi akunting.

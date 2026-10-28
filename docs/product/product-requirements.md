@@ -2,7 +2,7 @@
 title: "Product Requirements"
 subtitle: "Visi, pengguna, ruang lingkup, dan ukuran keberhasilan"
 author: "Binyo POS"
-date: "2026-10-27"
+date: "2026-10-28"
 status: "Draft"
 ---
 
@@ -11,6 +11,8 @@ status: "Draft"
 ## 1. Visi
 
 Binyo membantu pemilik usaha mengetahui apa yang terjual, uang yang diterima, dan stok yang berubah tanpa menu berlapis atau istilah teknis yang tidak perlu.
+
+Pilot pertama berfokus pada kedai kopi dengan satu outlet, satu pemilik, satu manajer, satu atau lebih kasir, dan satu atau lebih staf gudang. Arsitektur tetap mendukung dua atau tiga outlet dengan pengguna, perangkat, harga, stok, dan laporan yang dibatasi per outlet.
 
 Prinsip produk:
 
@@ -43,6 +45,7 @@ Menerima barang, menghitung stok, melakukan transfer, dan mencatat penyesuaian d
 - Penyiapan outlet, perangkat, pengguna, dan hak akses.
 - Katalog produk, kategori, varian/SKU, modifier, harga, dan ketersediaan outlet.
 - Penjualan mobile dengan tunai dan metode non-tunai yang dicatat manual.
+- Split bill per item atau sebagian jumlah item dengan metode pembayaran berbeda.
 - Shift kasir, pergerakan kas, void, refund, dan audit tindakan sensitif.
 - Stok masuk, keluar, penjualan, opname, penyesuaian, dan peringatan stok rendah.
 - Pemasok, purchase order sederhana, dan penerimaan barang.
@@ -59,7 +62,7 @@ Menerima barang, menghitung stok, melakukan transfer, dan mencatat penyesuaian d
 - Broadcast WhatsApp dan marketing automation.
 - Integrasi langsung GrabFood/GoFood.
 - Toko online, self-order kiosk, dan customer display.
-- Split payment, tab pelanggan, dan pembayaran tempo.
+- Tab pelanggan dan pembayaran tempo.
 - Manajemen meja, reservasi, kursus hidangan, dan kitchen display.
 
 Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
@@ -70,8 +73,10 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 
 - Satu bisnis memiliki satu atau lebih outlet.
 - Pengguna dapat memiliki akses berbeda per outlet.
+- Peran merupakan kumpulan izin dinamis; menu, tab, dan tindakan POS hanya muncul bila pengguna memiliki izin pada outlet aktif.
 - Perangkat POS didaftarkan dan dapat dicabut aksesnya.
 - Tindakan sensitif memakai izin terpisah: diskon, ubah harga, void, refund, koreksi stok, dan buka laci.
+- Void transaksi dan pembalikan pembayaran salah membutuhkan PIN pemilik atau manajer, alasan, serta audit penyetuju.
 
 ### Katalog
 
@@ -91,6 +96,9 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 - Harga, pajak, nama produk, dan biaya disalin ke baris transaksi sebagai snapshot.
 - Nomor struk unik per outlet dan tetap dapat dibuat saat offline.
 - Transaksi selesai tidak dapat diedit diam-diam; koreksi memakai void atau refund dengan alasan.
+- Pembayaran sebagian mengubah transaksi menjadi `partially_paid`; transaksi selesai hanya setelah seluruh total teralokasi.
+- Split bill memilih item atau sebagian jumlah item tanpa menggandakan baris dan tanpa membuat pembatalan transaksi.
+- Kitchen ticket opsional mencetak item yang diarahkan ke bar atau dapur; kitchen display tetap fase berikutnya.
 
 ### Pembayaran
 
@@ -98,6 +106,8 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 - Kembalian dihitung hanya untuk tunai.
 - Pembayaran gagal atau belum terkonfirmasi tidak boleh menyelesaikan transaksi.
 - Metode non-tunai manual dapat mewajibkan referensi dan direkonsiliasi dengan settlement penyedia.
+- Satu bill dapat dibayar bertahap memakai metode berbeda; setiap pembayaran menyimpan alokasi item dan nominalnya.
+- Kesalahan sebelum konfirmasi dapat diedit. Pembayaran yang sudah tercatat hanya dapat dibalik dan diganti melalui tindakan berizin; record asli tetap ada.
 - Binyo tidak menyimpan data kartu.
 - Integrasi QRIS dinamis memakai penyedia pembayaran pada fase terpisah.
 
@@ -106,15 +116,19 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 - Kasir membuka shift dengan saldo awal.
 - Kas masuk/keluar non-penjualan wajib memiliki kategori, nominal, dan catatan.
 - Penutupan shift membandingkan kas sistem dan kas fisik.
+- Penutupan shift ditolak selama terdapat bill `open` atau `partially_paid` pada perangkat tersebut.
+- Bill yang belum lunas harus diselesaikan atau di-void dengan persetujuan sebelum penutupan diminta.
 - Selisih kas disimpan, bukan ditimpa.
 - Penutupan offline baru final di server setelah seluruh transaksi perangkat sampai urutan penutupan diterima.
+- Target operasi offline adalah satu shift atau delapan jam; melewati target menampilkan peringatan kritis dan mewajibkan sinkronisasi sebelum shift berikutnya.
 
 ### Persediaan
 
 - Semua perubahan stok menghasilkan pergerakan dengan sumber dan pelaku.
 - Stok tidak boleh diubah langsung tanpa histori.
 - Koreksi stok membutuhkan alasan.
-- Produk dapat mengizinkan atau melarang stok minus sesuai pengaturan bisnis.
+- Setiap outlet memiliki pengaturan larangan stok minus yang aktif secara default.
+- Jika larangan dinonaktifkan, penjualan tetap berjalan, HPP memakai biaya terakhir, dan saldo minus masuk daftar rekonsiliasi.
 - Stok opname membandingkan jumlah sistem dan fisik sebelum menghasilkan penyesuaian.
 
 ### Pembelian
@@ -137,6 +151,7 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 
 - Ringkasan penjualan, transaksi, rata-rata transaksi, pajak, diskon, void, dan refund.
 - Penjualan per produk, kategori, outlet, kasir, jam, dan metode pembayaran.
+- Penjualan rinci per transaksi serta rekap jumlah item terjual per produk dan varian.
 - Perkiraan laba kotor berdasarkan snapshot biaya.
 - Posisi stok, kartu stok, stok rendah, dan hasil opname.
 - Pembelian per pemasok dan penerimaan belum selesai.
