@@ -14,6 +14,8 @@ Binyo melayani kedai kopi yang bergerak cepat: kasir membutuhkan kepastian, mana
 
 Nama arah visual: `Counterline`.
 
+Prototype interaktif: [`../prototypes/counterline.html`](../prototypes/counterline.html). Gunakan parameter `?view=dashboard`, `?view=master`, `?view=pos`, atau `?view=phone` untuk membuka layar tertentu.
+
 Karakter:
 
 - Simple, elegan, bersih, dan profesional.
