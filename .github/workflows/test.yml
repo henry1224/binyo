@@ -16,19 +16,69 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  docs:
-    name: Documentation
+  quality:
+    name: Backoffice & Documentation
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: binyo_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          tools: composer:v2
+          coverage: none
+
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
           node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/backoffice/package-lock.json
+
+      - name: Install PHP dependencies
+        working-directory: apps/backoffice
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Install frontend dependencies
+        working-directory: apps/backoffice
+        run: npm ci
+
+      - name: Prepare application
+        working-directory: apps/backoffice
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Verify PostgreSQL migrations
+        working-directory: apps/backoffice
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: pgsql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+          DB_DATABASE: binyo_test
+          DB_USERNAME: postgres
+          DB_PASSWORD: postgres
+        run: php artisan migrate:fresh --force
 
       - name: Run quality gate
         run: bin/verify.sh

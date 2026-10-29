@@ -96,16 +96,16 @@ Detail: [`architecture/data-model.md`](architecture/data-model.md).
 
 Hak akses disimpan sebagai kemampuan dan ditugaskan per outlet. Nama peran hanya preset; tab dan tindakan POS mengikuti izin pengguna. Pembatalan transaksi dan pembalikan pembayaran membutuhkan PIN pemilik atau manajer serta alasan.
 
-## 6. Fondasi teknis yang direkomendasikan
+## 6. Fondasi teknis
 
 | Area | Rekomendasi | Status |
 |---|---|---|
-| Backend/API | Laravel modular monolith | Belum dikunci |
-| Backoffice | Inertia + Vue + TypeScript | Belum dikunci |
+| Backend/API | Laravel modular monolith | Diputuskan, implementasi M1 berjalan |
+| Backoffice | Inertia + Vue + TypeScript | Diputuskan, scaffold tersedia |
 | POS mobile | Flutter, Android-first | Wajib validasi hardware |
-| Database server | PostgreSQL | Direkomendasikan |
-| Database lokal POS | SQLite | Direkomendasikan |
-| Queue/cache | Database queue dahulu; Redis saat terbukti perlu | Direkomendasikan |
+| Database server | PostgreSQL | Diputuskan |
+| Database lokal POS | SQLite | Diputuskan, belum diimplementasikan |
+| Queue/cache | Database queue dahulu; Redis saat terbukti perlu | Diputuskan |
 
 Detail: [`architecture/technical-foundation.md`](architecture/technical-foundation.md).
 
