@@ -14,7 +14,7 @@ Binyo melayani kedai kopi yang bergerak cepat: kasir membutuhkan kepastian, mana
 
 Nama arah visual: `Counterline`.
 
-Prototype interaktif: [`../prototypes/counterline.html`](../prototypes/counterline.html). Gunakan parameter `?view=dashboard`, `?view=master`, `?view=shifts`, `?view=shift`, `?view=pos`, `?view=cash`, atau `?view=phone` untuk membuka layar tertentu.
+Prototype interaktif: [`../prototypes/counterline.html`](../prototypes/counterline.html). Gunakan parameter `?view=dashboard`, `?view=master`, `?view=operations`, `?view=shifts`, `?view=login`, `?view=shift`, `?view=pos`, `?view=cash`, atau `?view=phone` untuk membuka layar tertentu.
 
 Karakter:
 
@@ -185,7 +185,44 @@ Pada layar sempit, detail menjadi halaman penuh dengan tombol kembali yang mempe
 
 Filter outlet dan tanggal selalu terlihat. Label memakai `Laba kotor`, bukan `Laba bersih`, selama biaya operasional belum dicatat.
 
+### Operasional outlet, akses, dan perangkat
+
+Tiga objek ini berada pada satu ruang kerja karena saling menentukan konteks transaksi. Tab mengubah isi tanpa menambah menu utama.
+
+```text
++-------------------------------------------------------------------------------+
+| Operasional                              [Outlet] [Staff & akses] [Perangkat] |
+|-------------------------------------------------------------------------------|
+| Kedai Utama          | Kode outlet       KU                                  |
+| Kedai Timur          | Profit center     PC-KU                               |
+|                      | Stok minus        Tidak diizinkan                     |
+|                      | Staff aktif       4                                   |
+|                      | Perangkat          POS-01 · aktif                      |
++-------------------------------------------------------------------------------+
+```
+
+Kode outlet, profit center, binding perangkat, dan status akses lebih dominan daripada metadata alamat. Perubahan berisiko memakai tindakan spesifik seperti `Cabut perangkat`, bukan ikon atau tombol `Hapus` generik.
+
 ## 6. POS mobile
+
+### Login tablet
+
+Login menunjukkan konteks yang ditentukan perangkat sebelum meminta PIN. Outlet dan profit center bersifat read-only.
+
+```text
++--------------------------------------------------+
+| Masuk ke POS                                     |
+|--------------------------------------------------|
+| Perangkat       POS-01                           |
+| Outlet          Kedai Utama                      |
+| Profit center   PC-KU                            |
+| PIN              [ • • • • ]                    |
+|                                                  |
+|                               [Masuk dan lanjut] |
++--------------------------------------------------+
+```
+
+Setelah PIN valid, aplikasi menampilkan pengguna, role, dan shift yang akan dilanjutkan. Kasir tidak melewati langkah ini untuk memilih outlet lain.
 
 ### Tablet landscape
 

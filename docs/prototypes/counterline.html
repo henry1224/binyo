@@ -1870,6 +1870,8 @@
         <button type="button" data-view="dashboard" aria-pressed="true">Backoffice</button>
         <button type="button" data-view="master" aria-pressed="false">Master data</button>
         <button type="button" data-view="shifts" aria-pressed="false">Shift & kas</button>
+        <button type="button" data-view="operations" aria-pressed="false">Operasional</button>
+        <button type="button" data-view="login" aria-pressed="false">Login POS</button>
         <button type="button" data-view="shift" aria-pressed="false">Mulai shift</button>
         <button type="button" data-view="pos" aria-pressed="false">POS tablet</button>
         <button type="button" data-view="cash" aria-pressed="false">Kas tablet</button>
@@ -1910,7 +1912,7 @@
                         <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
                         <span class="nav-text">Laporan</span>
                     </button>
-                    <button class="nav-item" type="button" data-message="Operasional masuk prototype tahap berikutnya." title="Operasional">
+                    <button class="nav-item" type="button" data-screen="operations" title="Operasional">
                         <svg class="nav-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                         <span class="nav-text">Operasional</span>
                     </button>
@@ -2031,6 +2033,86 @@
                     </section>
                 </section>
 
+                <section id="operations-page" class="page hidden">
+                    <div class="page-head">
+                        <div><p class="eyebrow">Operasional · konteks transaksi</p><h1>Outlet, akses & perangkat</h1><p class="subtle">Outlet menetapkan profit center, staff menetapkan izin, dan perangkat menetapkan lokasi transaksi.</p></div>
+                        <button class="button primary" type="button" data-message="Form tambah outlet dibuka.">Tambah outlet</button>
+                    </div>
+                    <nav class="subnav" aria-label="Operasional">
+                        <button class="active" type="button" data-operation-tab="outlets">Outlet</button>
+                        <button type="button" data-operation-tab="staff">Staff & akses</button>
+                        <button type="button" data-operation-tab="devices">Perangkat</button>
+                    </nav>
+
+                    <section id="operation-outlets" class="operation-panel">
+                        <div class="master-summary">
+                            <div class="summary-strip"><span>Outlet aktif</span><strong>2</strong></div>
+                            <div class="summary-strip"><span>Profit center</span><strong>2</strong></div>
+                            <div class="summary-strip"><span>Perlu tindakan</span><strong>0</strong></div>
+                        </div>
+                        <div class="transactions-layout">
+                            <div class="transaction-list">
+                                <div class="transaction-filter"><label class="search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg><input type="search" placeholder="Cari outlet" aria-label="Cari outlet"></label></div>
+                                <button class="transaction-row active" type="button" data-outlet="utama"><div><strong>Kedai Utama</strong><span class="meta">KU · PC-KU · Balikpapan</span></div><span class="badge">Aktif</span></button>
+                                <button class="transaction-row" type="button" data-outlet="timur"><div><strong>Kedai Timur</strong><span class="meta">KT · PC-KT · Balikpapan Timur</span></div><span class="badge">Aktif</span></button>
+                            </div>
+                            <article class="transaction-detail">
+                                <div class="detail-head"><div><p class="eyebrow">Outlet aktif</p><h1 id="outlet-detail-name">Kedai Utama</h1><p id="outlet-detail-location" class="subtle">Balikpapan · Asia/Makassar</p></div><button class="button" type="button">Ubah outlet</button></div>
+                                <div class="form-grid" style="margin-top:20px">
+                                    <label class="field">Kode outlet<input id="outlet-detail-code" type="text" value="KU" readonly></label>
+                                    <label class="field">Profit center<input id="outlet-detail-profit" type="text" value="PC-KU" readonly></label>
+                                    <label class="field">Awal hari usaha<input id="outlet-detail-day" type="text" value="04:00 WITA" readonly></label>
+                                    <label class="field">Stok minus<input id="outlet-detail-stock" type="text" value="Tidak diizinkan" readonly></label>
+                                    <label class="field">Pajak<input id="outlet-detail-tax" type="text" value="Belum diatur" readonly></label>
+                                    <label class="field">Service charge<input id="outlet-detail-service" type="text" value="Tidak ada" readonly></label>
+                                    <label class="field full">Metode pembayaran<input id="outlet-detail-payments" type="text" value="Tunai, QRIS, transfer, kartu" readonly></label>
+                                    <label class="field">Staff aktif<input id="outlet-detail-staff" type="text" value="4 pengguna" readonly></label>
+                                    <label class="field">Perangkat<input id="outlet-detail-device" type="text" value="POS-01 aktif · POS-02 standby" readonly></label>
+                                </div>
+                                <div class="audit-line"><strong>Aturan transaksi</strong><br>Profit center mengikuti outlet perangkat. Kasir tidak dapat menggantinya dari aplikasi POS.</div>
+                            </article>
+                        </div>
+                    </section>
+
+                    <section id="operation-staff" class="operation-panel hidden">
+                        <div class="master-summary">
+                            <div class="summary-strip"><span>Staff aktif</span><strong>6</strong></div>
+                            <div class="summary-strip"><span>Role</span><strong>4</strong></div>
+                            <div class="summary-strip"><span>PIN terkunci</span><strong>0</strong></div>
+                        </div>
+                        <section class="panel table-panel">
+                            <table class="data-table">
+                                <thead><tr><th>Staff</th><th>Role</th><th>Outlet</th><th>Permission utama</th><th>Terakhir masuk</th><th>Status</th></tr></thead>
+                                <tbody>
+                                    <tr><td><strong>Henry William</strong><div class="subtle">Pemilik</div></td><td>Owner</td><td>Semua outlet</td><td>Semua permission</td><td>10:42</td><td><span class="badge">Aktif</span></td></tr>
+                                    <tr><td><strong>Budi</strong><div class="subtle">Manajer</div></td><td>Manajer</td><td>Kedai Utama, Kedai Timur</td><td>Approve, void, refund, shift</td><td>10:18</td><td><span class="badge">Aktif</span></td></tr>
+                                    <tr><td><strong>Rina</strong><div class="subtle">Kasir</div></td><td>Kasir</td><td>Kedai Utama</td><td>Jual, shift, kas request</td><td>10:40</td><td><span class="badge">Aktif</span></td></tr>
+                                    <tr><td><strong>Dimas</strong><div class="subtle">Gudang</div></td><td>Gudang</td><td>Kedai Timur</td><td>Terima barang, stok</td><td>Kemarin</td><td><span class="badge">Aktif</span></td></tr>
+                                </tbody>
+                            </table>
+                        </section>
+                    </section>
+
+                    <section id="operation-devices" class="operation-panel hidden">
+                        <div class="master-summary">
+                            <div class="summary-strip"><span>Perangkat aktif</span><strong>2</strong></div>
+                            <div class="summary-strip"><span>Cadangan</span><strong>1</strong></div>
+                            <div class="summary-strip"><span>Perlu sinkron</span><strong>0</strong></div>
+                        </div>
+                        <section class="panel table-panel">
+                            <table class="data-table">
+                                <thead><tr><th>Perangkat</th><th>Outlet / profit center</th><th>Printer / drawer</th><th>Versi</th><th>Terakhir sinkron</th><th>Status</th><th></th></tr></thead>
+                                <tbody>
+                                    <tr><td><strong>POS-01</strong><div class="subtle mono">A91F-82KU</div></td><td>Kedai Utama · PC-KU</td><td>Epson LAN 80 mm<div class="subtle">Drawer Utama</div></td><td class="mono">1.0.0</td><td>10:42</td><td><span class="badge">Aktif</span></td><td><button class="panel-link" type="button" data-message="Detail POS-01 dibuka.">Detail</button></td></tr>
+                                    <tr><td><strong>POS-02</strong><div class="subtle mono">B37C-11KU</div></td><td>Kedai Utama · PC-KU</td><td>Bluetooth 58 mm<div class="subtle">Tanpa drawer</div></td><td class="mono">1.0.0</td><td>09:58</td><td><span class="badge warning">Standby</span></td><td><button class="panel-link" type="button" data-message="POS-02 siap dipakai sebagai cadangan tanpa drawer utama.">Detail</button></td></tr>
+                                    <tr><td><strong>POS-03</strong><div class="subtle mono">C62D-45KT</div></td><td>Kedai Timur · PC-KT</td><td>Epson LAN 80 mm<div class="subtle">Drawer Timur</div></td><td class="mono">1.0.0</td><td>10:39</td><td><span class="badge">Aktif</span></td><td><button class="panel-link" type="button" data-message="Pencabutan perangkat membutuhkan konfirmasi owner.">Cabut</button></td></tr>
+                                </tbody>
+                            </table>
+                        </section>
+                        <div class="audit-line"><strong>Binding aman</strong><br>Perangkat yang dipindahkan ke outlet lain harus dicabut lalu diregistrasi ulang. Riwayat transaksi tetap memakai outlet asal.</div>
+                    </section>
+                </section>
+
                 <section id="transactions-page" class="page hidden">
                     <div class="page-head">
                         <div><p class="eyebrow">Penjualan · transaksi</p><h1>Transaksi</h1><p class="subtle">Cari, periksa pembayaran, cetak ulang, atau mulai koreksi berizin.</p></div>
@@ -2120,7 +2202,7 @@
 
     <div id="pos-app" class="app pos-shell hidden">
         <header class="rail pos-rail">
-            <div class="rail-brand"><span class="rail-mark">B</span> Kedai Utama</div>
+            <div class="rail-brand"><span class="rail-mark">B</span> <span id="active-outlet-label">Kedai Utama</span></div>
             <div class="rail-context"><strong id="active-shift-label">Shift #018</strong></div>
             <div class="rail-context optional">Kasir <strong id="active-cashier-label">Rina</strong></div>
             <div class="rail-spacer"></div>
@@ -2159,6 +2241,33 @@
                 <div id="phone-products" class="product-grid phone-products"></div>
             </main>
             <div class="phone-cart-bar"><div><span id="phone-count">0 item</span><strong id="phone-total">Rp0</strong></div><button id="phone-cart-button" type="button">Lihat bill</button></div>
+        </div>
+    </div>
+
+    <div id="pos-login-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="pos-login-title">
+        <div class="modal">
+            <div class="modal-head"><div><h2 id="pos-login-title">Masuk ke POS</h2><p>Perangkat menetapkan outlet dan profit center. Masukkan PIN staff untuk melanjutkan.</p></div><button class="icon-button" type="button" data-close-modal aria-label="Tutup login POS"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+            <div id="pos-login-form">
+                <div class="modal-body">
+                    <div class="cash-overview">
+                        <div class="cash-stat"><span>Perangkat</span><strong>POS-01</strong><small>Terpercaya · versi 1.0.0</small></div>
+                        <div class="cash-stat"><span>Outlet</span><strong>Kedai Utama</strong><small>Binding tidak dapat diubah kasir</small></div>
+                        <div class="cash-stat"><span>Profit center</span><strong>PC-KU</strong><small>Mengikuti outlet perangkat</small></div>
+                        <div class="cash-stat"><span>Status sinkron</span><strong>Online</strong><small>Terakhir 10:42</small></div>
+                    </div>
+                    <label class="field" style="margin-top:16px">PIN staff<input id="pos-login-pin" type="password" inputmode="numeric" maxlength="6" placeholder="4–6 digit"><small>Gunakan PIN sintetis `2468` untuk prototype.</small></label>
+                    <p id="pos-login-error" class="form-error hidden"></p>
+                </div>
+                <div class="modal-actions"><button class="button" type="button" data-close-modal>Kembali</button><button id="submit-pos-login" class="button primary" type="button">Masuk</button></div>
+            </div>
+            <div id="pos-login-success" class="payment-result hidden">
+                <span class="success-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg></span>
+                <h2>Rina dapat masuk</h2>
+                <p>Kasir · Kedai Utama · PC-KU</p>
+                <div class="split-summary"><div class="summary-row"><span>Shift perangkat</span><strong>#018 aktif</strong></div><div class="summary-row"><span>Permission</span><strong>Jual, shift, kas request</strong></div></div>
+                <p>Outlet dan profit center terkunci mengikuti POS-01.</p>
+                <div class="modal-actions"><button id="continue-pos-login" class="button primary" type="button">Lanjutkan Shift #018</button></div>
+            </div>
         </div>
     </div>
 
@@ -2325,6 +2434,10 @@
                 { time: "12:20", label: "Tambahan uang kecil", amount: 100000, meta: "Rina · disetujui Budi" },
                 { time: "11:04", label: "Belanja es batu", amount: -50000, meta: "Rina · disetujui Budi" }
             ];
+            var outlets = {
+                utama: { name: "Kedai Utama", location: "Balikpapan · Asia/Makassar", code: "KU", profit: "PC-KU", day: "04:00 WITA", stock: "Tidak diizinkan", tax: "Belum diatur", service: "Tidak ada", payments: "Tunai, QRIS, transfer, kartu", staff: "4 pengguna", device: "POS-01 aktif · POS-02 standby" },
+                timur: { name: "Kedai Timur", location: "Balikpapan Timur · Asia/Makassar", code: "KT", profit: "PC-KT", day: "04:00 WITA", stock: "Tidak diizinkan", tax: "Belum diatur", service: "Tidak ada", payments: "Tunai, QRIS, transfer", staff: "3 pengguna", device: "POS-03 aktif" }
+            };
 
             var formatRupiah = function (amount) {
                 return "Rp" + Math.round(amount).toLocaleString("id-ID");
@@ -2379,6 +2492,36 @@
                 }, 2200);
             };
 
+            var showOperationTab = function (tab) {
+                ["outlets", "staff", "devices"].forEach(function (name) {
+                    document.getElementById("operation-" + name).classList.toggle("hidden", name !== tab);
+                });
+                document.querySelectorAll("[data-operation-tab]").forEach(function (button) {
+                    button.classList.toggle("active", button.dataset.operationTab === tab);
+                });
+            };
+
+            var selectOutlet = function (key) {
+                var outlet = outlets[key];
+                if (!outlet) {
+                    return;
+                }
+                document.getElementById("outlet-detail-name").textContent = outlet.name;
+                document.getElementById("outlet-detail-location").textContent = outlet.location;
+                document.getElementById("outlet-detail-code").value = outlet.code;
+                document.getElementById("outlet-detail-profit").value = outlet.profit;
+                document.getElementById("outlet-detail-day").value = outlet.day;
+                document.getElementById("outlet-detail-stock").value = outlet.stock;
+                document.getElementById("outlet-detail-tax").value = outlet.tax;
+                document.getElementById("outlet-detail-service").value = outlet.service;
+                document.getElementById("outlet-detail-payments").value = outlet.payments;
+                document.getElementById("outlet-detail-staff").value = outlet.staff;
+                document.getElementById("outlet-detail-device").value = outlet.device;
+                document.querySelectorAll("[data-outlet]").forEach(function (button) {
+                    button.classList.toggle("active", button.dataset.outlet === key);
+                });
+            };
+
             var setNavActive = function (screen) {
                 var activeScreen = screen === "shifts" ? "transactions" : screen;
                 document.querySelectorAll(".nav-item").forEach(function (button) {
@@ -2387,7 +2530,7 @@
             };
 
             var showBackofficePage = function (screen) {
-                ["dashboard", "master", "transactions", "shifts", "reports"].forEach(function (name) {
+                ["dashboard", "master", "operations", "transactions", "shifts", "reports"].forEach(function (name) {
                     document.getElementById(name + "-page").classList.toggle("hidden", name !== screen);
                 });
                 setNavActive(screen);
@@ -2396,17 +2539,19 @@
 
             var setView = function (view) {
                 currentView = view;
-                var isPosView = view === "pos" || view === "shift" || view === "cash" || view === "handover";
+                var isPosView = view === "pos" || view === "login" || view === "shift" || view === "cash" || view === "handover";
                 document.getElementById("backoffice-app").classList.toggle("hidden", isPosView || view === "phone");
                 document.getElementById("pos-app").classList.toggle("hidden", !isPosView);
                 document.getElementById("phone-app").classList.toggle("hidden", view !== "phone");
                 document.querySelectorAll(".prototype-dock [data-view]").forEach(function (button) {
                     button.setAttribute("aria-pressed", button.dataset.view === view ? "true" : "false");
                 });
-                if (["dashboard", "master", "shifts"].indexOf(view) !== -1) {
+                if (["dashboard", "master", "operations", "shifts"].indexOf(view) !== -1) {
                     showBackofficePage(view);
                 }
-                if (view === "shift") {
+                if (view === "login") {
+                    openPosLogin();
+                } else if (view === "shift") {
                     openModal("shift-start-modal");
                 } else if (view === "cash") {
                     renderCash();
@@ -2591,6 +2736,35 @@
                 showToast("Shift #018 dimulai dengan kas awal " + formatRupiah(amount));
             };
 
+            var openPosLogin = function () {
+                document.getElementById("pos-login-form").classList.remove("hidden");
+                document.getElementById("pos-login-success").classList.add("hidden");
+                document.getElementById("pos-login-error").classList.add("hidden");
+                document.getElementById("pos-login-pin").value = "";
+                openModal("pos-login-modal");
+            };
+
+            var submitPosLogin = function () {
+                var pin = document.getElementById("pos-login-pin").value.trim();
+                var error = document.getElementById("pos-login-error");
+                if (pin !== "2468") {
+                    error.textContent = /^\d{4,6}$/.test(pin) ? "PIN tidak cocok untuk staff aktif di Kedai Utama." : "PIN harus terdiri dari 4–6 digit.";
+                    error.classList.remove("hidden");
+                    return;
+                }
+                error.classList.add("hidden");
+                document.getElementById("pos-login-form").classList.add("hidden");
+                document.getElementById("pos-login-success").classList.remove("hidden");
+            };
+
+            var continuePosLogin = function () {
+                document.getElementById("active-outlet-label").textContent = "Kedai Utama";
+                document.getElementById("active-cashier-label").textContent = "Rina";
+                closeModals();
+                setView("pos");
+                showToast("Rina masuk ke Kedai Utama · PC-KU");
+            };
+
             var addProduct = function (productId) {
                 var product = products.find(function (entry) { return entry.id === productId; });
                 var existing = cart.find(function (entry) { return entry.id === productId; });
@@ -2673,6 +2847,8 @@
                 var methodButton = event.target.closest("[data-method]");
                 var cashMovementButton = event.target.closest("[data-open-cash-movement]");
                 var cashTypeButton = event.target.closest("[data-cash-type]");
+                var operationTabButton = event.target.closest("[data-operation-tab]");
+                var outletButton = event.target.closest("[data-outlet]");
 
                 if (viewButton) {
                     setView(viewButton.dataset.view);
@@ -2697,6 +2873,10 @@
                     openCashMovement(cashMovementButton.dataset.openCashMovement);
                 } else if (cashTypeButton) {
                     setCashType(cashTypeButton.dataset.cashType);
+                } else if (operationTabButton) {
+                    showOperationTab(operationTabButton.dataset.operationTab);
+                } else if (outletButton) {
+                    selectOutlet(outletButton.dataset.outlet);
                 }
             });
 
@@ -2746,6 +2926,13 @@
             document.getElementById("confirm-handover").addEventListener("click", confirmHandover);
             document.getElementById("enter-next-shift").addEventListener("click", enterNextShift);
             document.getElementById("start-shift-button").addEventListener("click", startShift);
+            document.getElementById("submit-pos-login").addEventListener("click", submitPosLogin);
+            document.getElementById("continue-pos-login").addEventListener("click", continuePosLogin);
+            document.getElementById("pos-login-pin").addEventListener("keydown", function (event) {
+                if (event.key === "Enter") {
+                    submitPosLogin();
+                }
+            });
 
             ["counted-cash", "carried-cash"].forEach(function (id) {
                 document.getElementById(id).addEventListener("input", function () {
@@ -2776,6 +2963,7 @@
             console.assert(expectedCash() === 2530000, "Kas awal prototype harus menghasilkan saldo Rp2.530.000.");
             console.assert(escapeHtml('<script>') === "&lt;script&gt;", "Teks pergerakan kas harus di-escape sebelum dirender.");
             console.assert(/^\d{4,6}$/.test("1234") && !/^\d{4,6}$/.test("12ab"), "PIN persetujuan harus 4–6 digit.");
+            console.assert(outlets.utama.profit === "PC-KU" && outlets.timur.profit === "PC-KT", "Setiap outlet prototype harus memiliki profit center berbeda.");
         }());
     </script>
 </body>

@@ -186,6 +186,9 @@ Arah visual, komponen, layout, dan wireframe kanonis berada pada [`interface-des
 - Nama menu memakai istilah pengguna, bukan nama tabel atau proses internal.
 - Filter outlet dan tanggal selalu terlihat pada laporan.
 - Status offline, sinkronisasi, shift, dan outlet selalu terlihat pada POS.
+- Profit center transaksi selalu berasal dari outlet yang terikat ke perangkat, bukan pilihan kasir.
+- Pengguna hanya dapat masuk ke POS bila memiliki role aktif pada outlet perangkat.
+- Pemindahan perangkat antar-outlet membutuhkan pencabutan dan registrasi ulang.
 - Error menjelaskan penyebab dan tindakan berikutnya.
 - Tombol berisiko menyebut tindakan dengan jelas, misalnya `Batalkan transaksi`, bukan `OK`.
 - Semua alur utama dapat dipakai dengan sentuhan dan ukuran target minimum 44 x 44 px.

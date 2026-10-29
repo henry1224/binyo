@@ -60,13 +60,16 @@ flowchart TD
 ### outlets
 
 - `id`, `business_id`
-- `code`, `name`
+- `code`, `name`, `profit_center_code`
 - `address`
-- `timezone`
+- `timezone`, `business_day_start`
 - `receipt_prefix`
+- `default_tax_profile_id`, `service_charge_profile_id` opsional
 - `prevent_negative_stock`, default aktif
 - `replica_enabled`, default `false`
 - `status`
+
+Pada MVP, satu outlet memiliki tepat satu profit center. `code` dan `profit_center_code` unik dalam bisnis serta tidak dapat diubah setelah outlet memiliki transaksi; perubahan nama tidak mengubah histori.
 
 ### users
 
@@ -74,21 +77,39 @@ flowchart TD
 - `name`, `email_or_phone`
 - `password_hash`
 - `pin_hash` opsional
+- `pin_version`, `pin_failed_attempts`, `pin_locked_until`
 - `status`, `last_login_at`
 
 ### roles, permissions, user_outlet_roles
 
 Peran adalah kumpulan izin. Penugasan menyebut pengguna, outlet, dan peran agar seorang manajer tidak otomatis melihat semua outlet.
 
+- `roles`: `id`, `business_id`, `name`, `is_system_preset`, `status`
+- `permissions`: `code`, `description`
+- `role_permissions`: `role_id`, `permission_code`
+- `user_outlet_roles`: `user_id`, `outlet_id`, `role_id`, `assigned_by`, `assigned_at`
+
 Persetujuan PIN menyimpan tindakan, record, peminta, penyetuju, outlet, perangkat, alasan, dan waktu. Mengetahui PIN tidak mengubah role pengguna aktif.
 
 ### devices
 
-- `id`, `business_id`, `outlet_id`
+- `id`, `business_id`, `outlet_id`, `cash_drawer_id` opsional
 - `code`, `name`, `platform`
 - `installation_id`
+- `app_version`, `trusted_at`
 - `last_seen_at`, `last_sync_at`
-- `revoked_at`
+- `status`: `active`, `standby`, atau `revoked`
+- `revoked_at`, `revoked_by`
+
+`installation_id` unik dan satu perangkat hanya terikat ke satu outlet. Perubahan outlet membutuhkan pencabutan binding lama dan registrasi ulang agar transaksi offline tidak berpindah profit center.
+
+### cash_drawers
+
+- `id`, `business_id`, `outlet_id`
+- `code`, `name`, `printer_profile_id` opsional
+- `status`
+
+Satu cash drawer hanya boleh memiliki satu shift `open` atau `closing_pending_sync`. Perangkat cadangan dapat aktif tanpa cash drawer atau memakai drawer berbeda.
 
 ## 4. Katalog
 
@@ -377,6 +398,13 @@ Snapshot transaksi menyimpan basis hitung, tarif, nominal, dan aturan inclusive/
 
 - `id`, `business_id`, `name`, `type`
 - `requires_reference`, `requires_reconciliation`, `status`, `display_order`
+
+### outlet_payment_methods
+
+- `outlet_id`, `payment_method_id`
+- `is_enabled`, `display_order`
+
+Kasir hanya melihat metode pembayaran yang aktif pada outlet perangkatnya.
 
 ## 11. Audit dan sinkronisasi
 

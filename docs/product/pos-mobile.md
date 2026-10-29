@@ -34,12 +34,14 @@ Peran dapat dibuat dinamis dari backoffice. Nama seperti Pemilik, Manajer, Kasir
 ## 3. Alur mulai kerja
 
 1. Pengguna masuk dengan akun, lalu memakai PIN untuk akses harian bila perangkat sudah dipercaya.
-2. Sistem memeriksa outlet dan perangkat yang ditugaskan.
-3. Sistem mengunduh perubahan katalog, harga, pajak, metode pembayaran, dan izin.
+2. Sistem membaca binding perangkat untuk menetapkan outlet dan profit center; kasir tidak memilihnya secara manual.
+3. Sistem memastikan pengguna aktif memiliki role pada outlet, lalu mengunduh katalog, harga, pajak, metode pembayaran, dan permission.
 4. Sistem melanjutkan shift aktif pada perangkat; bila tidak ada, kasir mengisi saldo awal pada layar `Mulai Penjualan`.
 5. Halaman jual terbuka dengan status outlet, shift, kasir, koneksi, dan sinkronisasi terlihat.
 
 Login tidak membuat shift secara diam-diam. Satu perangkat hanya memiliki satu shift aktif, tetapi beberapa kasir boleh menjual pada shift yang sama memakai PIN masing-masing. Setiap transaksi menyimpan kasir pelaksana; pengguna yang membuka shift tetap menjadi penanggung jawab sampai serah terima selesai.
+
+PIN yang salah dibatasi percobaannya dan dapat mengunci akses sementara. Perangkat `revoked`, pengguna nonaktif, atau pengguna tanpa role pada outlet ditolak sebelum data penjualan ditampilkan. Memindahkan perangkat ke outlet lain membutuhkan registrasi ulang dan tidak dapat dilakukan dari aplikasi kasir.
 
 ## 4. Alur penjualan
 
@@ -227,6 +229,8 @@ Kalibrasi perangkat nyata wajib dilakukan sebelum pilot. Simulator tidak cukup u
 - Kasir memasukkan kas fisik sebelum aplikasi menampilkan kas sistem dan selisih.
 - Struk menampilkan bisnis, outlet, nomor, waktu, kasir, item, diskon, pajak, total, pembayaran, dan kembalian.
 - Status offline dan antrean sinkronisasi selalu terlihat.
+- Login menetapkan outlet serta profit center dari binding perangkat dan menolak pengguna tanpa role pada outlet tersebut.
+- Perangkat yang dicabut tidak dapat membuat transaksi baru setelah menerima status pencabutan.
 - Void, refund, dan diskon berizin tercatat pada audit log.
 - Shift offline tidak berstatus final di server sebelum seluruh transaksi sampai batas urutan penutupan tersinkron.
 - Switch `OFF` tidak membuat event replica; switch `ON` membuat satu event idempotent setelah transaksi utama berhasil.

@@ -34,6 +34,7 @@ Gate memeriksa:
 | Database/migration | migration pada PostgreSQL test + rollback/forward check |
 | Sales/payment | perhitungan, idempotency, duplicate retry, refund, audit |
 | Shift/cash | saldo kas, permission, blind count, reversal, handover, offline close |
+| Access/device | role per outlet, revoked user/device, PIN lockout, binding profit center |
 | Inventory | ledger, saldo, reversal, race/concurrency, rekonsiliasi |
 | Offline sync | retry, urutan terbalik, restart, cursor, conflict, duplicate payload |
 | UI penting | browser test dan screenshot desktop/mobile |

@@ -78,6 +78,12 @@ Semua laporan memakai pola sama: rentang tanggal, outlet, filter terkait, ringka
 - Perangkat POS.
 - Log aktivitas.
 
+`Outlet` menyimpan kode outlet, profit center, alamat, zona waktu, awal hari usaha, aturan stok minus, pajak, service charge, metode pembayaran, dan status. Pada MVP, relasi outlet ke profit center adalah satu banding satu.
+
+`Staff & Akses` menugaskan pengguna ke outlet dan role. Role adalah kumpulan permission; preset Pemilik, Manajer, Kasir, dan Gudang dapat disalin lalu disesuaikan tanpa mengubah histori penugasan lama.
+
+`Perangkat POS` menampilkan binding outlet, installation ID, versi aplikasi, printer, cash drawer, terakhir online, terakhir sinkron, serta status. Memindahkan perangkat ke outlet lain dilakukan dengan pencabutan dan registrasi ulang, bukan mengubah outlet langsung.
+
 ### Pengaturan
 
 - Profil bisnis.
@@ -175,6 +181,8 @@ Audit lengkap: [`../references/vireo-menu-audit.md`](../references/vireo-menu-au
 | Melihat log aktivitas | Ya | Sesuai akses | Tidak | Opsional |
 | Kelola switch replica | Ya | Tidak | Tidak | Tidak |
 | Melihat laporan replica | Ya | Opsional | Tidak | Tidak |
+
+Kasir tidak memilih outlet atau profit center ketika menjual. Binding perangkat menetapkan outlet; role pengguna hanya menentukan apakah ia boleh masuk dan tindakan apa yang tersedia pada outlet tersebut.
 
 Hak akses disimpan per kemampuan, bukan hanya nama peran. Nama peran di atas adalah preset.
 
