@@ -224,8 +224,11 @@ Tidak ada hard delete untuk `sales`, `sale_lines`, `payments`, atau `refunds`.
 
 ### shifts
 
-- `id`, `outlet_id`, `device_id`, `opened_by`, `closed_by`
+- `id`, `outlet_id`, `device_id`, `business_date`
+- `opened_by`, `responsible_user_id`, `closed_by`
+- `previous_shift_id` opsional untuk serah terima
 - `opening_cash`, `expected_cash`, `counted_cash`, `difference`
+- `deposited_cash`, `carried_cash`
 - `opening_device_sequence`, `closing_device_sequence`
 - `opened_at`, `close_requested_at`, `closed_at`
 - `status`: `open`, `closing_pending_sync`, `closed`
@@ -234,13 +237,24 @@ Server hanya mengubah shift menjadi `closed` setelah seluruh transaksi perangkat
 
 Permintaan penutupan ditolak bila perangkat masih memiliki transaksi `open`, `partially_paid`, pembayaran `draft`, atau command transaksi gagal yang belum diselesaikan. Bill harus dilunasi atau di-void dengan persetujuan sebelum penutupan.
 
+Satu perangkat hanya memiliki satu shift `open` atau `closing_pending_sync`. `counted_cash` dimasukkan sebelum `expected_cash` ditampilkan kepada kasir. Saat serah terima, `deposited_cash + carried_cash` harus sama dengan `counted_cash`; `carried_cash` menjadi `opening_cash` shift berikutnya dan tidak masuk penjualan.
+
 ### cash_movements
 
-- `id`, `shift_id`
-- `type`: `cash_in` atau `cash_out`
-- `reason_id`, `amount`, `note`, `created_by`, `created_at`
+- `id`, `shift_id`, `device_sequence`, `idempotency_key`
+- `type`: `cash_in`, `cash_out`, `cash_drop`, atau `reversal`
+- `reason_id`, `amount`, `note`
+- `created_by`, `approved_by`, `created_at`, `synced_at`
+- `reversal_of_id` opsional
 
 Penjualan tunai tidak perlu diduplikasi sebagai `cash_movement`; kas yang diharapkan dihitung dari pembayaran tunai, refund tunai, dan pergerakan kas non-penjualan.
+
+```text
+expected_cash = opening_cash + cash_sales + manual_cash_in
+              - cash_refunds - manual_cash_out - cash_drop
+```
+
+Pergerakan yang sudah tersimpan bersifat immutable. Koreksi membuat `reversal` yang menunjuk record asal, memakai idempotency key baru, dan menyimpan alasan serta penyetuju. Pergerakan offline mengikuti urutan perangkat dan harus tersinkron sebelum shift berikutnya dibuka.
 
 ## 7. Persediaan
 

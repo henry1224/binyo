@@ -116,10 +116,14 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 
 - Kasir membuka shift dengan saldo awal.
 - Kas masuk/keluar non-penjualan wajib memiliki kategori, nominal, dan catatan.
+- Penjualan tunai, refund tunai, dan pergerakan kas manual membentuk saldo kas sistem tanpa pencatatan ganda.
+- Beberapa kasir boleh menjual pada satu shift, tetapi satu pengguna tetap menjadi penanggung jawab kas sampai serah terima.
 - Penutupan shift membandingkan kas sistem dan kas fisik.
 - Penutupan shift ditolak selama terdapat bill `open` atau `partially_paid` pada perangkat tersebut.
 - Bill yang belum lunas harus diselesaikan atau di-void dengan persetujuan sebelum penutupan diminta.
 - Selisih kas disimpan, bukan ditimpa.
+- Serah terima menyimpan setoran dan kas yang diteruskan; kas diteruskan menjadi saldo awal shift berikutnya dan bukan pendapatan.
+- Satu perangkat hanya memiliki satu shift aktif dan tidak dapat berbagi cash drawer aktif dengan perangkat lain.
 - Penutupan offline baru final di server setelah seluruh transaksi perangkat sampai urutan penutupan diterima.
 - Target operasi offline adalah satu shift atau delapan jam; melewati target menampilkan peringatan kritis dan mewajibkan sinkronisasi sebelum shift berikutnya.
 

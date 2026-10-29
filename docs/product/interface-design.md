@@ -14,7 +14,7 @@ Binyo melayani kedai kopi yang bergerak cepat: kasir membutuhkan kepastian, mana
 
 Nama arah visual: `Counterline`.
 
-Prototype interaktif: [`../prototypes/counterline.html`](../prototypes/counterline.html). Gunakan parameter `?view=dashboard`, `?view=master`, `?view=pos`, atau `?view=phone` untuk membuka layar tertentu.
+Prototype interaktif: [`../prototypes/counterline.html`](../prototypes/counterline.html). Gunakan parameter `?view=dashboard`, `?view=master`, `?view=shifts`, `?view=shift`, `?view=pos`, `?view=cash`, atau `?view=phone` untuk membuka layar tertentu.
 
 Karakter:
 
@@ -256,6 +256,38 @@ Item yang sudah dibayar berubah menjadi read-only dengan label metode serta wakt
 ### Pembayaran selesai
 
 Satu motion utama dipakai saat pembayaran berhasil: total bergeser menjadi status `Pembayaran tercatat`, lalu tindakan `Cetak struk`, `Bagikan`, dan `Pesanan baru` muncul. Durasi maksimum `220ms`; tidak ada confetti.
+
+### Shift dan kas tablet
+
+Menu `Kas` berada pada operational rail agar dapat dijangkau tanpa memenuhi area jual. Ringkasan menampilkan komponen kas, bukan nominal kas sistem saat proses hitung kas berlangsung.
+
+```text
++--------------------------------------------------------------------------+
+| Kedai Utama | Shift #018 | Rina | Online                         [Kas]   |
++--------------------------------------------------------------------------+
+| Kas awal             Rp500.000 | Penjualan tunai      Rp2.000.000       |
+| Kas masuk/keluar      +Rp50.000 | Refund tunai           -Rp20.000       |
+|--------------------------------------------------------------------------|
+| 12:20 Tambahan uang kecil   +Rp100.000  Rina · disetujui Budi           |
+| 11:04 Belanja es batu        -Rp50.000  Rina · disetujui Budi           |
+|--------------------------------------------------------------------------|
+| [Kas masuk] [Kas keluar]                         [Tutup / serah terima]   |
++--------------------------------------------------------------------------+
+```
+
+Saat tutup shift, kasir memasukkan jumlah fisik lebih dahulu. Hasil perbandingan baru muncul setelah dikirim:
+
+```text
+Kas aktual            Rp2.530.000
+Kas seharusnya        Rp2.530.000
+Selisih                       Rp0
+Disetor               Rp2.030.000
+Diteruskan Shift 2      Rp500.000
+
+[Tutup dan mulai Shift 2]
+```
+
+Kas masuk/keluar memakai satu dialog dengan jenis, kategori, nominal, catatan, dan PIN penyetuju. Serah terima tetap satu alur terpandu; aplikasi tidak membuat pengguna menutup lalu mencari menu buka shift secara terpisah.
 
 ## 7. Komponen dan interaksi
 

@@ -123,6 +123,8 @@ Binyo tidak membuat menu terpisah untuk setiap dimensi laporan. Satu laporan pen
 - `Pelanggan`: data minimum dan riwayat berizin.
 - `Rekonsiliasi Pembayaran`: cocokkan nominal POS dengan settlement penyedia.
 
+`Shift & Kas` menampilkan shift per outlet dan perangkat, penanggung jawab, kas awal, penjualan tunai, pergerakan manual, kas aktual, selisih, setoran, serta kas yang diteruskan. Record kas tidak dapat diedit atau dihapus; koreksi memakai reversal yang tetap terlihat pada audit.
+
 ### Replica data
 
 - Switch berada pada `Pengaturan > Replica data` dan berlaku per outlet.

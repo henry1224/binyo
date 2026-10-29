@@ -36,8 +36,10 @@ Peran dapat dibuat dinamis dari backoffice. Nama seperti Pemilik, Manajer, Kasir
 1. Pengguna masuk dengan akun, lalu memakai PIN untuk akses harian bila perangkat sudah dipercaya.
 2. Sistem memeriksa outlet dan perangkat yang ditugaskan.
 3. Sistem mengunduh perubahan katalog, harga, pajak, metode pembayaran, dan izin.
-4. Kasir membuka shift dan memasukkan saldo awal.
-5. Halaman jual terbuka dengan status outlet, shift, koneksi, dan sinkronisasi terlihat.
+4. Sistem melanjutkan shift aktif pada perangkat; bila tidak ada, kasir mengisi saldo awal pada layar `Mulai Penjualan`.
+5. Halaman jual terbuka dengan status outlet, shift, kasir, koneksi, dan sinkronisasi terlihat.
+
+Login tidak membuat shift secara diam-diam. Satu perangkat hanya memiliki satu shift aktif, tetapi beberapa kasir boleh menjual pada shift yang sama memakai PIN masing-masing. Setiap transaksi menyimpan kasir pelaksana; pengguna yang membuka shift tetap menjadi penanggung jawab sampai serah terima selesai.
 
 ## 4. Alur penjualan
 
@@ -139,16 +141,36 @@ Target offline pilot adalah satu shift atau delapan jam. Setelah batas terlewati
 
 ## 9. Shift
 
-- Buka shift dengan saldo awal.
-- Catat kas masuk dan kas keluar non-penjualan.
+- Buka shift dengan saldo awal atau lanjutkan shift aktif pada perangkat.
+- Catat kas masuk dan kas keluar non-penjualan dengan kategori, catatan, pembuat, dan penyetuju.
+- Penjualan tunai dan refund tunai membuat saldo kas sistem berubah otomatis; keduanya tidak dicatat ulang sebagai pergerakan manual.
 - Lihat ringkasan metode pembayaran tanpa membuka laporan bisnis sensitif.
-- Tutup shift dengan hitung kas fisik.
-- Simpan selisih dan catatan.
+- Tutup shift dengan hitung kas fisik tanpa menampilkan kas sistem sebelum hitungan dikirim.
+- Simpan selisih, alasan, setoran, dan kas yang diteruskan ke shift berikutnya.
 - Sebelum penutupan, sistem menampilkan bill `open`, `partially_paid`, pembayaran draft, dan transaksi gagal sinkron.
 - Penutupan ditolak sampai seluruh bill dibayar penuh atau di-void dengan persetujuan pemilik/manajer.
 - Shift dapat masuk status `Menunggu sinkronisasi` bila seluruh transaksi sudah tersimpan aman di perangkat tetapi belum diterima server.
 - Penutupan server baru final setelah seluruh urutan transaksi perangkat sampai nomor penutupan diterima.
 - Kasir tidak dapat menghapus antrean transaksi atau membuka shift baru pada perangkat yang sama sebelum status penutupan aman.
+
+Kas yang diharapkan dihitung dengan rumus:
+
+```text
+kas awal + penjualan tunai + kas masuk manual
+- refund tunai - kas keluar manual - setoran kas
+```
+
+Kas masuk/keluar manual meminta permission `cash.movement.create`. Jika pengguna tidak memiliki `cash.movement.approve`, aplikasi meminta PIN pemilik atau manajer. Record yang sudah dibuat tidak dapat diedit atau dihapus; kesalahan dibalik dengan record baru, alasan, dan penyetuju.
+
+Pergerakan ini mengatur cash drawer, bukan jurnal akuntansi, HPP, atau pengakuan biaya. General ledger tetap di luar MVP.
+
+### Dua shift dalam satu hari
+
+- Shift melekat pada outlet, perangkat, dan cash drawer; hari usaha dapat memiliki beberapa shift berurutan.
+- Pergantian kasir biasa tidak menutup shift. `Serah Terima Shift` dipakai ketika tanggung jawab kas berpindah.
+- Penutupan menyimpan kas aktual, setoran, dan kas yang diteruskan. Nilai yang diteruskan menjadi kas awal shift berikutnya tanpa dihitung sebagai pendapatan.
+- Jika kasir sebelumnya tidak tersedia, pemilik/manajer dapat mengambil alih dengan PIN dan alasan.
+- Perangkat cadangan membuat shift sendiri dan tidak boleh memakai cash drawer yang sama secara bersamaan.
 
 ## 10. Perangkat dan aksesori
 
@@ -200,6 +222,9 @@ Kalibrasi perangkat nyata wajib dilakukan sebelum pilot. Simulator tidak cukup u
 - Menekan tombol bayar berulang tidak membuat pembayaran ganda.
 - Split bill tidak menggandakan item, nominal, pajak, diskon, atau pembayaran.
 - Shift tidak dapat ditutup selama masih ada bill terbuka atau dibayar sebagian.
+- Kas masuk/keluar manual membutuhkan kategori, catatan, dan persetujuan sesuai permission.
+- Serah terima menutup shift lama sebelum membuka shift baru serta tidak menggandakan kas awal atau pendapatan.
+- Kasir memasukkan kas fisik sebelum aplikasi menampilkan kas sistem dan selisih.
 - Struk menampilkan bisnis, outlet, nomor, waktu, kasir, item, diskon, pajak, total, pembayaran, dan kembalian.
 - Status offline dan antrean sinkronisasi selalu terlihat.
 - Void, refund, dan diskon berizin tercatat pada audit log.
