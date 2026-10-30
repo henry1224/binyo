@@ -98,4 +98,4 @@ CI `Tests & Lint` wajib hijau. Temuan review diselesaikan pada branch yang sama.
 
 ## Kondisi repository saat ini
 
-Remote branch `origin/main` belum tersedia saat dokumentasi ini dibuat. Push dan PR baru dapat dijalankan setelah remote utama disiapkan. Workflow lokal, commit, hook, dan test tetap berlaku.
+Remote `origin` dan branch `main` tersedia. Branch implementasi dapat memakai stacked PR bila bergantung pada PR dokumentasi yang belum merge; setelah dependency merge, base PR diarahkan kembali ke `main`.

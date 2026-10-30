@@ -2,8 +2,8 @@
 title: "Fondasi Teknis"
 subtitle: "Batas sistem, API, sinkronisasi, keamanan, dan operasi"
 author: "Binyo POS"
-date: "2026-10-28"
-status: "Rekomendasi, belum dikunci"
+date: "2026-10-29"
+status: "Diputuskan, implementasi M1 berjalan"
 ---
 
 # Fondasi Teknis
@@ -25,7 +25,7 @@ POS mobile ---- Local database + durable sync queue
 
 Modular monolith cukup untuk MVP. Microservice menambah deployment, transaksi terdistribusi, observability, dan kegagalan jaringan tanpa manfaat awal.
 
-## 2. Stack rekomendasi
+## 2. Stack yang diputuskan
 
 - Backend/API: Laravel.
 - Backoffice: Inertia + Vue + TypeScript.
@@ -37,6 +37,8 @@ Modular monolith cukup untuk MVP. Microservice menambah deployment, transaksi te
 - File: S3-compatible object storage untuk gambar produk dan ekspor.
 
 Flutter 3.47 mendukung Android API 24-37. Binyo menargetkan perangkat baru Android 13+; perangkat Android 11-12 hanya diterima bila masih mendapat patch vendor. Keputusan Flutter tetap harus divalidasi memakai printer, scanner, dan cash drawer target karena dukungan hardware nyata lebih penting daripada preferensi framework.
+
+Implementasi M1 dimulai pada `apps/backoffice` memakai Laravel 13, Inertia 3, Vue 3, TypeScript, dan PostgreSQL. POS Flutter dimulai setelah kontrak autentikasi pengguna, binding perangkat, outlet, dan permission stabil.
 
 ## 3. Batas modul backend
 
