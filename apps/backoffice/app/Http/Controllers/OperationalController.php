@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Operational\SaveOutletRequest;
 use App\Models\Outlet;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -15,7 +17,10 @@ class OperationalController extends Controller
 
         abort_if($user === null, 401);
 
-        $canViewAllOutlets = $user->outletAssignments()
+        $canManageOperations = $user->outletAssignments()
+            ->whereHas('role.permissions', fn ($query) => $query->whereKey('operations.manage'))
+            ->exists();
+        $canViewAllOutlets = $canManageOperations || $user->outletAssignments()
             ->whereHas('role.permissions', fn ($query) => $query->whereKey('outlet.view_all'))
             ->exists();
 
@@ -64,6 +69,58 @@ class OperationalController extends Controller
             'outlets' => $outlets,
             'activeTab' => $activeTab,
             'selectedOutletId' => $selectedOutletId,
+            'canManageOperations' => $canManageOperations,
+        ]);
+    }
+
+    public function store(SaveOutletRequest $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        abort_if($user === null, 401);
+
+        $data = $request->validated();
+        $outlet = Outlet::query()->create([
+            ...$data,
+            'business_id' => $user->business_id,
+            'timezone' => $user->business()->value('timezone_default'),
+            'receipt_prefix' => $data['code'],
+        ]);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => "Outlet {$outlet->name} berhasil ditambahkan.",
+        ]);
+
+        return to_route('operational.index', [
+            'tab' => 'outlets',
+            'outlet' => $outlet->id,
+        ]);
+    }
+
+    public function update(SaveOutletRequest $request, int $outlet): RedirectResponse
+    {
+        $user = $request->user();
+
+        abort_if($user === null, 401);
+
+        $outletModel = Outlet::query()
+            ->where('business_id', $user->business_id)
+            ->findOrFail($outlet);
+        $data = $request->validated();
+        $outletModel->update([
+            ...$data,
+            'receipt_prefix' => $data['code'],
+        ]);
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => "Outlet {$outletModel->name} berhasil diperbarui.",
+        ]);
+
+        return to_route('operational.index', [
+            'tab' => 'outlets',
+            'outlet' => $outletModel->id,
         ]);
     }
 }

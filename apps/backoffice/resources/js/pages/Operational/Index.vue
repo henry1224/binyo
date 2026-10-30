@@ -1,8 +1,28 @@
 <script setup lang="ts">
-import { Head } from '@inertiajs/vue3';
-import { Building2, MonitorSmartphone, ShieldCheck, Users } from '@lucide/vue';
-import { computed } from 'vue';
+import { Form, Head } from '@inertiajs/vue3';
+import {
+    Building2,
+    MonitorSmartphone,
+    Pencil,
+    Plus,
+    ShieldCheck,
+    Users,
+} from '@lucide/vue';
+import { computed, ref } from 'vue';
+import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetFooter,
+    SheetHeader,
+    SheetTitle,
+} from '@/components/ui/sheet';
+import { store, update } from '@/routes/operational/outlets';
 
 type Assignment = {
     id: number;
@@ -43,6 +63,7 @@ const props = defineProps<{
     outlets: Outlet[];
     activeTab: 'outlets' | 'staff' | 'devices';
     selectedOutletId: number | null;
+    canManageOperations: boolean;
 }>();
 
 const tabs = [
@@ -65,10 +86,34 @@ const devices = computed(() =>
         outlet.devices.map((device) => ({ ...device, outlet })),
     ),
 );
+const outletSheetOpen = ref(false);
+const editingOutlet = ref<Outlet | null>(null);
+
+const openCreateOutlet = () => {
+    editingOutlet.value = null;
+    outletSheetOpen.value = true;
+};
+
+const openEditOutlet = (outlet: Outlet) => {
+    editingOutlet.value = outlet;
+    outletSheetOpen.value = true;
+};
+
+const setOutletSheetOpen = (open: boolean) => {
+    outletSheetOpen.value = open;
+
+    if (!open) {
+        editingOutlet.value = null;
+    }
+};
 
 const statusLabel = (status: string) =>
-    ({ active: 'Aktif', standby: 'Cadangan', revoked: 'Dicabut' })[status] ??
-    status;
+    ({
+        active: 'Aktif',
+        inactive: 'Nonaktif',
+        standby: 'Cadangan',
+        revoked: 'Dicabut',
+    })[status] ?? status;
 
 const dateTime = (value: string | null) =>
     value
@@ -134,26 +179,38 @@ defineOptions({
                     </p>
                 </div>
 
-                <div
-                    class="inline-flex w-full rounded-xl border bg-card/80 p-1 shadow-sm backdrop-blur lg:w-auto"
-                    role="tablist"
-                    aria-label="Data operasional"
-                >
-                    <a
-                        v-for="tab in tabs"
-                        :key="tab.id"
-                        :href="`/operational?tab=${tab.id}`"
-                        role="tab"
-                        :aria-selected="activeTab === tab.id"
-                        class="min-h-11 flex-1 rounded-lg px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:flex-none"
-                        :class="
-                            activeTab === tab.id
-                                ? 'bg-[#163f35] text-white shadow-sm'
-                                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                        "
+                <div class="flex flex-col gap-3 sm:flex-row">
+                    <Button
+                        v-if="canManageOperations"
+                        type="button"
+                        class="min-h-11 bg-[#a66d20] text-white hover:bg-[#8d5c1b]"
+                        @click="openCreateOutlet"
                     >
-                        {{ tab.label }}
-                    </a>
+                        <Plus class="size-4" />
+                        Tambah outlet
+                    </Button>
+
+                    <div
+                        class="inline-flex w-full rounded-xl border bg-card/80 p-1 shadow-sm backdrop-blur lg:w-auto"
+                        role="tablist"
+                        aria-label="Data operasional"
+                    >
+                        <a
+                            v-for="tab in tabs"
+                            :key="tab.id"
+                            :href="`/operational?tab=${tab.id}`"
+                            role="tab"
+                            :aria-selected="activeTab === tab.id"
+                            class="min-h-11 flex-1 rounded-lg px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:flex-none"
+                            :class="
+                                activeTab === tab.id
+                                    ? 'bg-[#163f35] text-white shadow-sm'
+                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                            "
+                        >
+                            {{ tab.label }}
+                        </a>
+                    </div>
                 </div>
             </header>
 
@@ -196,7 +253,14 @@ defineOptions({
                                 {{ outlet.code }}
                             </span>
                         </span>
-                        <span class="size-2 rounded-full bg-emerald-500" />
+                        <span
+                            class="size-2 rounded-full"
+                            :class="
+                                outlet.status === 'active'
+                                    ? 'bg-emerald-500'
+                                    : 'bg-stone-400'
+                            "
+                        />
                     </a>
                 </div>
 
@@ -206,7 +270,7 @@ defineOptions({
                     >
                         <div>
                             <p class="text-sm text-muted-foreground">
-                                Outlet aktif
+                                Outlet terpilih
                             </p>
                             <h2
                                 class="mt-1 text-xl font-semibold tracking-tight"
@@ -214,12 +278,28 @@ defineOptions({
                                 {{ selectedOutlet.name }}
                             </h2>
                         </div>
-                        <Badge
-                            variant="outline"
-                            class="border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
-                        >
-                            {{ statusLabel(selectedOutlet.status) }}
-                        </Badge>
+                        <div class="flex items-center gap-2">
+                            <Button
+                                v-if="canManageOperations"
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                @click="openEditOutlet(selectedOutlet)"
+                            >
+                                <Pencil class="size-3.5" />
+                                Ubah
+                            </Button>
+                            <Badge
+                                variant="outline"
+                                :class="
+                                    selectedOutlet.status === 'active'
+                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'
+                                        : 'border-stone-200 bg-stone-50 text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200'
+                                "
+                            >
+                                {{ statusLabel(selectedOutlet.status) }}
+                            </Badge>
+                        </div>
                     </div>
 
                     <dl
@@ -252,7 +332,12 @@ defineOptions({
                                 Awal hari usaha
                             </dt>
                             <dd class="mt-2 font-semibold">
-                                {{ selectedOutlet.business_day_start }}
+                                {{
+                                    selectedOutlet.business_day_start.slice(
+                                        0,
+                                        5,
+                                    )
+                                }}
                             </dd>
                         </div>
                         <div>
@@ -441,5 +526,220 @@ defineOptions({
                 </div>
             </section>
         </main>
+
+        <Sheet :open="outletSheetOpen" @update:open="setOutletSheetOpen">
+            <SheetContent side="right" class="w-full gap-0 sm:max-w-lg">
+                <Form
+                    :key="editingOutlet?.id ?? 'create'"
+                    v-bind="
+                        editingOutlet
+                            ? update.form(editingOutlet.id)
+                            : store.form()
+                    "
+                    reset-on-success
+                    :options="{ preserveScroll: true }"
+                    class="flex min-h-0 flex-1 flex-col"
+                    @success="setOutletSheetOpen(false)"
+                    v-slot="{ errors, processing }"
+                >
+                    <SheetHeader class="border-b px-5 py-5 text-left">
+                        <SheetTitle>
+                            {{
+                                editingOutlet ? 'Ubah outlet' : 'Tambah outlet'
+                            }}
+                        </SheetTitle>
+                        <SheetDescription>
+                            Kode outlet dan profit center memisahkan transaksi,
+                            stok, serta laporan setiap cabang.
+                        </SheetDescription>
+                    </SheetHeader>
+
+                    <div
+                        class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5"
+                    >
+                        <div class="grid gap-2">
+                            <Label for="outlet-name">Nama outlet</Label>
+                            <Input
+                                id="outlet-name"
+                                name="name"
+                                :default-value="editingOutlet?.name"
+                                placeholder="Kedai Utama"
+                                required
+                                autofocus
+                                :aria-invalid="errors.name ? true : undefined"
+                            />
+                            <InputError :message="errors.name" />
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="grid gap-2">
+                                <Label for="outlet-code">Kode outlet</Label>
+                                <Input
+                                    id="outlet-code"
+                                    name="code"
+                                    :default-value="editingOutlet?.code"
+                                    placeholder="KU"
+                                    maxlength="20"
+                                    required
+                                    class="uppercase"
+                                    :aria-invalid="
+                                        errors.code ? true : undefined
+                                    "
+                                />
+                                <InputError :message="errors.code" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="profit-center-code">
+                                    Profit center
+                                </Label>
+                                <Input
+                                    id="profit-center-code"
+                                    name="profit_center_code"
+                                    :default-value="
+                                        editingOutlet?.profit_center_code
+                                    "
+                                    placeholder="PC-KU"
+                                    maxlength="40"
+                                    required
+                                    class="uppercase"
+                                    :aria-invalid="
+                                        errors.profit_center_code
+                                            ? true
+                                            : undefined
+                                    "
+                                />
+                                <InputError
+                                    :message="errors.profit_center_code"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="outlet-address">Alamat</Label>
+                            <textarea
+                                id="outlet-address"
+                                name="address"
+                                :value="editingOutlet?.address ?? ''"
+                                rows="3"
+                                maxlength="1000"
+                                placeholder="Alamat operasional outlet"
+                                class="min-h-24 w-full resize-y rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+                                :aria-invalid="
+                                    errors.address ? true : undefined
+                                "
+                            />
+                            <InputError :message="errors.address" />
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="grid gap-2">
+                                <Label for="business-day-start">
+                                    Awal hari usaha
+                                </Label>
+                                <Input
+                                    id="business-day-start"
+                                    name="business_day_start"
+                                    type="time"
+                                    :default-value="
+                                        editingOutlet?.business_day_start.slice(
+                                            0,
+                                            5,
+                                        ) ?? '04:00'
+                                    "
+                                    required
+                                    :aria-invalid="
+                                        errors.business_day_start
+                                            ? true
+                                            : undefined
+                                    "
+                                />
+                                <InputError
+                                    :message="errors.business_day_start"
+                                />
+                            </div>
+                            <div v-if="editingOutlet" class="grid gap-2">
+                                <Label for="outlet-status">Status</Label>
+                                <select
+                                    id="outlet-status"
+                                    name="status"
+                                    :value="editingOutlet.status"
+                                    class="h-9 w-full rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                                >
+                                    <option value="active">Aktif</option>
+                                    <option value="inactive">Nonaktif</option>
+                                </select>
+                                <InputError :message="errors.status" />
+                            </div>
+                            <input
+                                v-else
+                                type="hidden"
+                                name="status"
+                                value="active"
+                            />
+                        </div>
+
+                        <div
+                            class="rounded-xl border bg-[#f8f6ef] p-4 dark:bg-[#17201d]"
+                        >
+                            <input
+                                type="hidden"
+                                name="prevent_negative_stock"
+                                value="0"
+                            />
+                            <label
+                                for="prevent-negative-stock"
+                                class="flex cursor-pointer items-start gap-3"
+                            >
+                                <input
+                                    id="prevent-negative-stock"
+                                    type="checkbox"
+                                    name="prevent_negative_stock"
+                                    value="1"
+                                    :checked="
+                                        editingOutlet?.prevent_negative_stock ??
+                                        true
+                                    "
+                                    class="mt-0.5 size-4 rounded border-input accent-[#163f35]"
+                                />
+                                <span>
+                                    <span class="block text-sm font-medium">
+                                        Tolak penjualan saat stok tidak cukup
+                                    </span>
+                                    <span
+                                        class="mt-1 block text-xs leading-5 text-muted-foreground"
+                                    >
+                                        Produk tanpa pelacakan stok tetap dapat
+                                        dijual.
+                                    </span>
+                                </span>
+                            </label>
+                            <InputError
+                                class="mt-2"
+                                :message="errors.prevent_negative_stock"
+                            />
+                        </div>
+                    </div>
+
+                    <SheetFooter
+                        class="border-t bg-background px-5 py-4 sm:flex-row sm:justify-end"
+                    >
+                        <Button
+                            type="button"
+                            variant="outline"
+                            @click="setOutletSheetOpen(false)"
+                        >
+                            Batal
+                        </Button>
+                        <Button
+                            type="submit"
+                            class="bg-[#163f35] text-white hover:bg-[#12352d]"
+                            :disabled="processing"
+                        >
+                            {{ processing ? 'Menyimpan...' : 'Simpan outlet' }}
+                        </Button>
+                    </SheetFooter>
+                </Form>
+            </SheetContent>
+        </Sheet>
     </div>
 </template>

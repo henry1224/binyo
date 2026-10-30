@@ -132,6 +132,132 @@ class OperationalTest extends TestCase
         ]);
     }
 
+    public function test_authorized_user_can_create_outlet_for_their_business(): void
+    {
+        $business = Business::factory()->create(['timezone_default' => 'Asia/Jakarta']);
+        $existingOutlet = $this->createOutlet($business, 'KU', 'Kedai Utama', 'PC-KU');
+        $user = $this->createUserWithPermission($business, $existingOutlet, 'operations.manage');
+
+        $response = $this->actingAs($user)->post(route('operational.outlets.store'), [
+            'code' => 'kt',
+            'name' => ' Kedai Timur ',
+            'profit_center_code' => 'pc-kt',
+            'address' => ' Jalan Timur 10 ',
+            'business_day_start' => '04:00',
+            'prevent_negative_stock' => true,
+            'status' => 'active',
+        ]);
+
+        $outlet = Outlet::query()->where('business_id', $business->id)->where('code', 'KT')->firstOrFail();
+
+        $response->assertRedirect(route('operational.index', [
+            'tab' => 'outlets',
+            'outlet' => $outlet->id,
+        ]));
+        $this->assertDatabaseHas('outlets', [
+            'id' => $outlet->id,
+            'business_id' => $business->id,
+            'name' => 'Kedai Timur',
+            'profit_center_code' => 'PC-KT',
+            'address' => 'Jalan Timur 10',
+            'timezone' => 'Asia/Jakarta',
+            'receipt_prefix' => 'KT',
+            'prevent_negative_stock' => true,
+            'status' => 'active',
+        ]);
+        $this->actingAs($user)
+            ->get(route('operational.index'))
+            ->assertInertia(fn (Assert $page) => $page
+                ->has('outlets', 2)
+                ->where('canManageOperations', true));
+    }
+
+    public function test_user_without_permission_cannot_create_outlet(): void
+    {
+        $business = Business::factory()->create();
+        $outlet = $this->createOutlet($business, 'KU', 'Kedai Utama', 'PC-KU');
+        $role = Role::query()->create([
+            'business_id' => $business->id,
+            'name' => 'Kasir',
+            'status' => 'active',
+        ]);
+        $user = User::factory()->for($business)->create();
+        $this->assign($user, $outlet, $role);
+
+        $this->actingAs($user)
+            ->post(route('operational.outlets.store'), [
+                'code' => 'KT',
+                'name' => 'Kedai Timur',
+                'profit_center_code' => 'PC-KT',
+                'business_day_start' => '04:00',
+                'prevent_negative_stock' => true,
+                'status' => 'active',
+            ])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('outlets', [
+            'business_id' => $business->id,
+            'code' => 'KT',
+        ]);
+    }
+
+    public function test_authorized_user_can_update_own_outlet(): void
+    {
+        $business = Business::factory()->create();
+        $outlet = $this->createOutlet($business, 'KU', 'Kedai Utama', 'PC-KU');
+        $user = $this->createUserWithPermission($business, $outlet, 'operations.manage');
+
+        $this->actingAs($user)
+            ->put(route('operational.outlets.update', $outlet), [
+                'code' => 'KU',
+                'name' => 'Kedai Utama Baru',
+                'profit_center_code' => 'PC-KU',
+                'address' => null,
+                'business_day_start' => '05:00',
+                'prevent_negative_stock' => false,
+                'status' => 'inactive',
+            ])
+            ->assertRedirect(route('operational.index', [
+                'tab' => 'outlets',
+                'outlet' => $outlet->id,
+            ]));
+
+        $this->assertDatabaseHas('outlets', [
+            'id' => $outlet->id,
+            'business_id' => $business->id,
+            'name' => 'Kedai Utama Baru',
+            'prevent_negative_stock' => false,
+            'status' => 'inactive',
+        ]);
+        $outlet->refresh();
+        $this->assertStringStartsWith('05:00', $outlet->business_day_start);
+    }
+
+    public function test_outlet_update_cannot_cross_business_boundary(): void
+    {
+        $business = Business::factory()->create();
+        $otherBusiness = Business::factory()->create();
+        $assignedOutlet = $this->createOutlet($business, 'KU', 'Kedai Utama', 'PC-KU');
+        $foreignOutlet = $this->createOutlet($otherBusiness, 'KL', 'Kedai Lain', 'PC-KL');
+        $user = $this->createUserWithPermission($business, $assignedOutlet, 'operations.manage');
+
+        $this->actingAs($user)
+            ->put(route('operational.outlets.update', $foreignOutlet), [
+                'code' => 'KL',
+                'name' => 'Diubah Paksa',
+                'profit_center_code' => 'PC-KL',
+                'business_day_start' => '04:00',
+                'prevent_negative_stock' => true,
+                'status' => 'active',
+            ])
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('outlets', [
+            'id' => $foreignOutlet->id,
+            'name' => 'Kedai Lain',
+        ]);
+    }
+
     private function createOutlet(
         Business $business,
         string $code,
@@ -157,5 +283,26 @@ class OperationalTest extends TestCase
             'role_id' => $role->id,
             'assigned_at' => now(),
         ]);
+    }
+
+    private function createUserWithPermission(
+        Business $business,
+        Outlet $outlet,
+        string $permissionCode,
+    ): User {
+        $permission = Permission::query()->create([
+            'code' => $permissionCode,
+            'description' => 'Izin pengujian',
+        ]);
+        $role = Role::query()->create([
+            'business_id' => $business->id,
+            'name' => 'Pemilik',
+            'status' => 'active',
+        ]);
+        $role->permissions()->attach($permission);
+        $user = User::factory()->for($business)->create();
+        $this->assign($user, $outlet, $role);
+
+        return $user;
     }
 }
