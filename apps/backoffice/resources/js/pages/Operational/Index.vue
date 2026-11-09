@@ -1,14 +1,18 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, Link, router } from '@inertiajs/vue3';
 import {
     Building2,
+    ChevronLeft,
+    ChevronRight,
     MonitorSmartphone,
     Pencil,
     Plus,
+    Search,
     ShieldCheck,
     Users,
+    X,
 } from '@lucide/vue';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,6 +32,7 @@ type Assignment = {
     id: number;
     user: { id: number; name: string; email: string; status: string };
     role: { id: number; name: string };
+    outlet: Pick<Outlet, 'id' | 'name' | 'code' | 'profit_center_code'>;
 };
 
 type Device = {
@@ -40,6 +45,7 @@ type Device = {
     last_sync_at: string | null;
     status: string;
     cash_drawer: { id: number; name: string } | null;
+    outlet: Pick<Outlet, 'id' | 'name' | 'code' | 'profit_center_code'>;
 };
 
 type Outlet = {
@@ -54,40 +60,132 @@ type Outlet = {
     status: string;
     assignments_count: number;
     devices_count: number;
-    assignments: Assignment[];
-    devices: Device[];
+};
+
+type Paginated<T> = {
+    data: T[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+    from: number | null;
+    to: number | null;
+    prev_page_url: string | null;
+    next_page_url: string | null;
 };
 
 const props = defineProps<{
     business: { id: number; name: string };
-    outlets: Outlet[];
+    records: Paginated<Outlet | Assignment | Device>;
+    summary: { outlets: number; staff: number; devices: number };
+    filters: { search: string; perPage: number };
     activeTab: 'outlets' | 'staff' | 'devices';
     selectedOutletId: number | null;
     canManageOperations: boolean;
 }>();
 
 const tabs = [
-    { id: 'outlets', label: 'Outlet' },
-    { id: 'staff', label: 'Staff & akses' },
-    { id: 'devices', label: 'Perangkat' },
+    { id: 'outlets', label: 'Outlet', icon: Building2 },
+    { id: 'staff', label: 'Staf & akses', icon: Users },
+    { id: 'devices', label: 'Perangkat', icon: MonitorSmartphone },
 ] as const;
-const selectedOutlet = computed(
-    () =>
-        props.outlets.find((outlet) => outlet.id === props.selectedOutletId) ??
-        props.outlets[0],
+const outlets = computed(() =>
+    props.activeTab === 'outlets' ? (props.records.data as Outlet[]) : [],
 );
 const staff = computed(() =>
-    props.outlets.flatMap((outlet) =>
-        outlet.assignments.map((assignment) => ({ ...assignment, outlet })),
-    ),
+    props.activeTab === 'staff' ? (props.records.data as Assignment[]) : [],
 );
 const devices = computed(() =>
-    props.outlets.flatMap((outlet) =>
-        outlet.devices.map((device) => ({ ...device, outlet })),
-    ),
+    props.activeTab === 'devices' ? (props.records.data as Device[]) : [],
 );
+const activeOutletId = ref(props.selectedOutletId);
+const selectedOutlet = computed(
+    () =>
+        outlets.value.find((outlet) => outlet.id === activeOutletId.value) ??
+        outlets.value[0],
+);
+const search = ref(props.filters.search);
+const perPage = ref(props.filters.perPage);
 const outletSheetOpen = ref(false);
 const editingOutlet = ref<Outlet | null>(null);
+
+const activeTab = computed(() =>
+    tabs.find((tab) => tab.id === props.activeTab),
+);
+const searchPlaceholder = computed(
+    () =>
+        ({
+            outlets: 'Cari nama, kode, profit center, atau alamat',
+            staff: 'Cari nama, email, role, atau outlet',
+            devices: 'Cari kode, nama, platform, atau outlet',
+        })[props.activeTab],
+);
+const emptyState = computed(() =>
+    props.filters.search
+        ? {
+              title: 'Data tidak ditemukan',
+              description: `Tidak ada hasil untuk “${props.filters.search}”. Coba kata kunci lain.`,
+          }
+        : {
+              title: `Belum ada ${activeTab.value?.label.toLowerCase()}`,
+              description:
+                  props.activeTab === 'outlets'
+                      ? 'Tambahkan outlet pertama untuk mulai menyiapkan operasional.'
+                      : 'Data akan tampil setelah terhubung dengan outlet yang dapat Anda akses.',
+          },
+);
+
+const indexUrl = (
+    values: Partial<{
+        tab: 'outlets' | 'staff' | 'devices';
+        search: string;
+        per_page: number;
+    }> = {},
+) => {
+    const params = new URLSearchParams();
+    const tab = values.tab ?? props.activeTab;
+    const query = values.search ?? search.value.trim();
+
+    params.set('tab', tab);
+    params.set('per_page', String(values.per_page ?? perPage.value));
+
+    if (query) params.set('search', query);
+
+    return `/operational?${params.toString()}`;
+};
+
+const applyFilters = () => {
+    router.get(
+        indexUrl(),
+        {},
+        {
+            preserveScroll: true,
+            preserveState: true,
+            replace: true,
+            only: ['records', 'filters', 'selectedOutletId'],
+        },
+    );
+};
+
+const clearSearch = () => {
+    search.value = '';
+    applyFilters();
+};
+
+watch(
+    () => props.filters,
+    (filters) => {
+        search.value = filters.search;
+        perPage.value = filters.perPage;
+    },
+);
+
+watch(
+    () => props.selectedOutletId,
+    (outletId) => {
+        activeOutletId.value = outletId;
+    },
+);
 
 const openCreateOutlet = () => {
     editingOutlet.value = null;
@@ -135,35 +233,43 @@ defineOptions({
 
     <div class="flex flex-1 flex-col">
         <section
-            class="grid gap-4 bg-[#163f35] px-5 py-4 text-white sm:grid-cols-[1fr_auto] sm:items-center md:px-8"
+            class="border-b border-white/10 bg-[#163f35] px-5 py-4 text-white md:px-8"
             aria-label="Status operasional"
         >
-            <div>
-                <p
-                    class="text-xs font-medium tracking-[0.18em] text-white/60 uppercase"
-                >
-                    {{ business.name }}
-                </p>
-                <p class="mt-1 text-sm text-white/90">
-                    {{ outlets.length }} outlet dalam ruang kerja Anda
-                </p>
-            </div>
-            <div class="flex flex-wrap gap-x-5 gap-y-2 text-xs text-white/75">
-                <span class="inline-flex items-center gap-2">
-                    <span class="size-2 rounded-full bg-emerald-300" />
-                    Data utama aktif
-                </span>
-                <span>{{ devices.length }} perangkat terdaftar</span>
-            </div>
-        </section>
-
-        <main class="mx-auto w-full max-w-7xl space-y-6 p-5 md:p-8">
-            <header
-                class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
+            <div
+                class="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
             >
                 <div>
                     <p
-                        class="text-xs font-semibold tracking-[0.16em] text-[#a66d20] uppercase"
+                        class="text-xs font-medium tracking-[0.18em] text-white/60 uppercase"
+                    >
+                        {{ business.name }}
+                    </p>
+                    <p class="mt-1 text-sm text-white/90">
+                        Ruang kendali operasional bisnis
+                    </p>
+                </div>
+                <div
+                    class="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-white/75"
+                >
+                    <span class="inline-flex items-center gap-2">
+                        <span class="size-2 rounded-full bg-emerald-300" />
+                        Data utama aktif
+                    </span>
+                    <span>{{ summary.outlets }} outlet</span>
+                    <span>{{ summary.staff }} penugasan staf</span>
+                    <span>{{ summary.devices }} perangkat</span>
+                </div>
+            </div>
+        </section>
+
+        <main class="mx-auto w-full max-w-7xl space-y-5 p-5 md:p-8">
+            <header
+                class="flex flex-col gap-5 border-b pb-6 lg:flex-row lg:items-end lg:justify-between"
+            >
+                <div>
+                    <p
+                        class="text-xs font-semibold tracking-[0.16em] text-[#a66d20] uppercase dark:text-[#d3a052]"
                     >
                         Fondasi organisasi
                     </p>
@@ -173,49 +279,68 @@ defineOptions({
                     <p
                         class="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground"
                     >
-                        Outlet menentukan profit center. Role staf berlaku per
-                        outlet, dan perangkat tetap terikat ke outlet saat
-                        registrasi.
+                        Kelola outlet, penugasan staf, dan perangkat dari satu
+                        ruang kerja yang terukur.
                     </p>
                 </div>
 
-                <div class="flex flex-col gap-3 sm:flex-row">
-                    <Button
-                        v-if="canManageOperations"
-                        type="button"
-                        class="min-h-11 bg-[#a66d20] text-white hover:bg-[#8d5c1b]"
-                        @click="openCreateOutlet"
-                    >
-                        <Plus class="size-4" />
-                        Tambah outlet
-                    </Button>
-
-                    <div
-                        class="inline-flex w-full rounded-xl border bg-card/80 p-1 shadow-sm backdrop-blur lg:w-auto"
-                        role="tablist"
-                        aria-label="Data operasional"
-                    >
-                        <a
-                            v-for="tab in tabs"
-                            :key="tab.id"
-                            :href="`/operational?tab=${tab.id}`"
-                            role="tab"
-                            :aria-selected="activeTab === tab.id"
-                            class="min-h-11 flex-1 rounded-lg px-4 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none lg:flex-none"
-                            :class="
-                                activeTab === tab.id
-                                    ? 'bg-[#163f35] text-white shadow-sm'
-                                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                            "
-                        >
-                            {{ tab.label }}
-                        </a>
-                    </div>
-                </div>
+                <Button
+                    v-if="canManageOperations"
+                    type="button"
+                    class="min-h-11 bg-[#a66d20] text-white shadow-sm hover:bg-[#8d5c1b]"
+                    @click="openCreateOutlet"
+                >
+                    <Plus class="size-4" />
+                    Tambah outlet
+                </Button>
             </header>
 
+            <nav
+                class="grid grid-cols-1 gap-2 sm:grid-cols-3"
+                aria-label="Data operasional"
+            >
+                <Link
+                    v-for="tab in tabs"
+                    :key="tab.id"
+                    :href="indexUrl({ tab: tab.id, search: '' })"
+                    class="group flex min-h-16 items-center justify-between rounded-xl border px-4 transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    :class="
+                        activeTab?.id === tab.id
+                            ? 'border-[#163f35] bg-[#163f35] text-white shadow-sm dark:border-[#315c50] dark:bg-[#17352e]'
+                            : 'bg-card text-muted-foreground hover:border-[#a66d20]/40 hover:text-foreground'
+                    "
+                    preserve-scroll
+                >
+                    <span class="flex items-center gap-3">
+                        <span
+                            class="grid size-9 place-items-center rounded-lg"
+                            :class="
+                                activeTab?.id === tab.id
+                                    ? 'bg-white/10'
+                                    : 'bg-[#163f35]/7 text-[#163f35] dark:bg-white/5 dark:text-[#8db7aa]'
+                            "
+                        >
+                            <component :is="tab.icon" class="size-4" />
+                        </span>
+                        <span class="text-sm font-semibold">{{
+                            tab.label
+                        }}</span>
+                    </span>
+                    <span
+                        class="rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums"
+                        :class="
+                            activeTab?.id === tab.id
+                                ? 'bg-white/10 text-white'
+                                : 'bg-muted text-foreground'
+                        "
+                    >
+                        {{ summary[tab.id] }}
+                    </span>
+                </Link>
+            </nav>
+
             <section
-                v-if="outlets.length === 0"
+                v-if="summary.outlets === 0"
                 class="rounded-2xl border bg-card p-10 text-center shadow-sm"
             >
                 <Building2 class="mx-auto size-8 text-muted-foreground" />
@@ -227,304 +352,474 @@ defineOptions({
                 </p>
             </section>
 
-            <section
-                v-else-if="activeTab === 'outlets'"
-                class="grid overflow-hidden rounded-2xl border bg-card shadow-sm lg:grid-cols-[18rem_1fr]"
-            >
-                <div
-                    class="border-b bg-[#f8f6ef] p-3 lg:border-r lg:border-b-0 dark:bg-[#17201d]"
+            <template v-else>
+                <form
+                    class="flex flex-col gap-3 rounded-2xl border bg-card p-3 shadow-sm sm:flex-row sm:items-center"
+                    role="search"
+                    @submit.prevent="applyFilters"
                 >
-                    <a
-                        v-for="outlet in outlets"
-                        :key="outlet.id"
-                        :href="`/operational?tab=outlets&outlet=${outlet.id}`"
-                        class="mb-1 flex min-h-16 w-full items-center justify-between rounded-xl px-4 text-left transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                        :class="
-                            selectedOutlet?.id === outlet.id
-                                ? 'bg-card text-foreground shadow-sm ring-1 ring-border'
-                                : 'text-muted-foreground hover:bg-card/70 hover:text-foreground'
-                        "
-                    >
-                        <span>
-                            <span class="block text-sm font-semibold">
-                                {{ outlet.name }}
-                            </span>
-                            <span class="mt-1 block text-xs">
-                                {{ outlet.code }}
-                            </span>
-                        </span>
-                        <span
-                            class="size-2 rounded-full"
-                            :class="
-                                outlet.status === 'active'
-                                    ? 'bg-emerald-500'
-                                    : 'bg-stone-400'
-                            "
+                    <div class="relative min-w-0 flex-1">
+                        <Search
+                            class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
                         />
-                    </a>
-                </div>
+                        <Input
+                            v-model="search"
+                            type="search"
+                            :placeholder="searchPlaceholder"
+                            class="h-11 pr-10 pl-9"
+                            aria-label="Cari data operasional"
+                        />
+                        <button
+                            v-if="search"
+                            type="button"
+                            class="absolute top-1/2 right-2 grid size-7 -translate-y-1/2 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            aria-label="Hapus pencarian"
+                            @click="clearSearch"
+                        >
+                            <X class="size-3.5" />
+                        </button>
+                    </div>
 
-                <div v-if="selectedOutlet" class="p-5 md:p-8">
+                    <div class="flex items-center gap-2">
+                        <label
+                            for="per-page"
+                            class="shrink-0 text-sm text-muted-foreground"
+                        >
+                            Tampilkan
+                        </label>
+                        <select
+                            id="per-page"
+                            v-model.number="perPage"
+                            class="h-11 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                            @change="applyFilters"
+                        >
+                            <option :value="10">10</option>
+                            <option :value="25">25</option>
+                            <option :value="50">50</option>
+                        </select>
+                        <Button type="submit" class="h-11 px-5"> Cari </Button>
+                    </div>
+                </form>
+
+                <section
+                    v-if="records.total === 0"
+                    class="rounded-2xl border border-dashed bg-card px-6 py-14 text-center"
+                >
+                    <component
+                        :is="activeTab?.icon"
+                        class="mx-auto size-8 text-muted-foreground"
+                    />
+                    <h2 class="mt-4 font-semibold">{{ emptyState.title }}</h2>
+                    <p
+                        class="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground"
+                    >
+                        {{ emptyState.description }}
+                    </p>
+                    <Button
+                        v-if="filters.search"
+                        type="button"
+                        variant="outline"
+                        class="mt-5"
+                        @click="clearSearch"
+                    >
+                        Hapus pencarian
+                    </Button>
+                </section>
+
+                <section
+                    v-else-if="activeTab?.id === 'outlets'"
+                    class="grid overflow-hidden rounded-2xl border bg-card shadow-sm lg:grid-cols-[18rem_1fr]"
+                >
                     <div
-                        class="flex flex-col gap-3 border-b pb-6 sm:flex-row sm:items-center sm:justify-between"
+                        class="border-b bg-[#f8f6ef] p-3 lg:border-r lg:border-b-0 dark:bg-[#17201d]"
                     >
-                        <div>
-                            <p class="text-sm text-muted-foreground">
-                                Outlet terpilih
-                            </p>
-                            <h2
-                                class="mt-1 text-xl font-semibold tracking-tight"
-                            >
-                                {{ selectedOutlet.name }}
-                            </h2>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <Button
-                                v-if="canManageOperations"
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                @click="openEditOutlet(selectedOutlet)"
-                            >
-                                <Pencil class="size-3.5" />
-                                Ubah
-                            </Button>
-                            <Badge
-                                variant="outline"
+                        <button
+                            v-for="outlet in outlets"
+                            :key="outlet.id"
+                            type="button"
+                            class="mb-1 flex min-h-16 w-full items-center justify-between rounded-xl px-4 text-left transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            :class="
+                                selectedOutlet?.id === outlet.id
+                                    ? 'bg-card text-foreground shadow-sm ring-1 ring-border'
+                                    : 'text-muted-foreground hover:bg-card/70 hover:text-foreground'
+                            "
+                            @click="activeOutletId = outlet.id"
+                        >
+                            <span>
+                                <span class="block text-sm font-semibold">
+                                    {{ outlet.name }}
+                                </span>
+                                <span class="mt-1 block text-xs">
+                                    {{ outlet.code }}
+                                </span>
+                            </span>
+                            <span
+                                class="size-2 rounded-full"
                                 :class="
-                                    selectedOutlet.status === 'active'
-                                        ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'
-                                        : 'border-stone-200 bg-stone-50 text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200'
+                                    outlet.status === 'active'
+                                        ? 'bg-emerald-500'
+                                        : 'bg-stone-400'
                                 "
-                            >
-                                {{ statusLabel(selectedOutlet.status) }}
-                            </Badge>
-                        </div>
+                            />
+                        </button>
                     </div>
 
-                    <dl
-                        class="grid gap-x-8 gap-y-6 py-7 sm:grid-cols-2 xl:grid-cols-3"
-                    >
-                        <div>
-                            <dt
-                                class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                            >
-                                Kode outlet
-                            </dt>
-                            <dd class="mt-2 font-semibold">
-                                {{ selectedOutlet.code }}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt
-                                class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                            >
-                                Profit center
-                            </dt>
-                            <dd class="mt-2 font-semibold text-[#163f35]">
-                                {{ selectedOutlet.profit_center_code }}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt
-                                class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                            >
-                                Awal hari usaha
-                            </dt>
-                            <dd class="mt-2 font-semibold">
-                                {{
-                                    selectedOutlet.business_day_start.slice(
-                                        0,
-                                        5,
-                                    )
-                                }}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt
-                                class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                            >
-                                Zona waktu
-                            </dt>
-                            <dd class="mt-2 font-semibold">
-                                {{ selectedOutlet.timezone }}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt
-                                class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                            >
-                                Stok minus
-                            </dt>
-                            <dd class="mt-2 font-semibold">
-                                {{
-                                    selectedOutlet.prevent_negative_stock
-                                        ? 'Tidak diizinkan'
-                                        : 'Diizinkan'
-                                }}
-                            </dd>
-                        </div>
-                        <div>
-                            <dt
-                                class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
-                            >
-                                Kesiapan
-                            </dt>
-                            <dd
-                                class="mt-2 flex items-center gap-2 font-semibold"
-                            >
-                                <ShieldCheck class="size-4 text-emerald-600" />
-                                {{ selectedOutlet.assignments_count }} staf ·
-                                {{ selectedOutlet.devices_count }} perangkat
-                            </dd>
-                        </div>
-                    </dl>
-                </div>
-            </section>
-
-            <section
-                v-else-if="activeTab === 'staff'"
-                class="overflow-hidden rounded-2xl border bg-card shadow-sm"
-            >
-                <div class="flex items-center gap-3 border-b px-5 py-4">
-                    <Users class="size-5 text-[#a66d20]" />
-                    <div>
-                        <h2 class="font-semibold">Staff & akses</h2>
-                        <p class="text-xs text-muted-foreground">
-                            Satu orang dapat memiliki role berbeda pada outlet
-                            berbeda.
-                        </p>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-[720px] text-left text-sm">
-                        <thead
-                            class="bg-muted/60 text-xs tracking-wider text-muted-foreground uppercase"
+                    <div v-if="selectedOutlet" class="p-5 md:p-8">
+                        <div
+                            class="flex flex-col gap-3 border-b pb-6 sm:flex-row sm:items-center sm:justify-between"
                         >
-                            <tr>
-                                <th class="px-5 py-3 font-medium">Nama</th>
-                                <th class="px-5 py-3 font-medium">Outlet</th>
-                                <th class="px-5 py-3 font-medium">Role</th>
-                                <th class="px-5 py-3 font-medium">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y">
-                            <tr
-                                v-for="assignment in staff"
-                                :key="assignment.id"
-                                class="hover:bg-muted/30"
-                            >
-                                <td class="px-5 py-4">
-                                    <span class="block font-medium">
-                                        {{ assignment.user.name }}
-                                    </span>
-                                    <span
-                                        class="mt-1 block text-xs text-muted-foreground"
-                                    >
-                                        {{ assignment.user.email }}
-                                    </span>
-                                </td>
-                                <td class="px-5 py-4">
-                                    {{ assignment.outlet.name }}
-                                </td>
-                                <td class="px-5 py-4 font-medium">
-                                    {{ assignment.role.name }}
-                                </td>
-                                <td class="px-5 py-4">
-                                    <Badge variant="outline">
-                                        {{
-                                            statusLabel(assignment.user.status)
-                                        }}
-                                    </Badge>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+                            <div>
+                                <p class="text-sm text-muted-foreground">
+                                    Outlet terpilih
+                                </p>
+                                <h2
+                                    class="mt-1 text-xl font-semibold tracking-tight"
+                                >
+                                    {{ selectedOutlet.name }}
+                                </h2>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <Button
+                                    v-if="canManageOperations"
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    @click="openEditOutlet(selectedOutlet)"
+                                >
+                                    <Pencil class="size-3.5" />
+                                    Ubah
+                                </Button>
+                                <Badge
+                                    variant="outline"
+                                    :class="
+                                        selectedOutlet.status === 'active'
+                                            ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'
+                                            : 'border-stone-200 bg-stone-50 text-stone-700 dark:border-stone-700 dark:bg-stone-900 dark:text-stone-200'
+                                    "
+                                >
+                                    {{ statusLabel(selectedOutlet.status) }}
+                                </Badge>
+                            </div>
+                        </div>
 
-            <section
-                v-else
-                class="overflow-hidden rounded-2xl border bg-card shadow-sm"
-            >
-                <div class="flex items-center gap-3 border-b px-5 py-4">
-                    <MonitorSmartphone class="size-5 text-[#a66d20]" />
-                    <div>
-                        <h2 class="font-semibold">Perangkat POS</h2>
-                        <p class="text-xs text-muted-foreground">
-                            Pemindahan outlet membutuhkan pencabutan dan
-                            registrasi ulang.
-                        </p>
-                    </div>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-[820px] text-left text-sm">
-                        <thead
-                            class="bg-muted/60 text-xs tracking-wider text-muted-foreground uppercase"
+                        <dl
+                            class="grid gap-x-8 gap-y-6 py-7 sm:grid-cols-2 xl:grid-cols-3"
                         >
-                            <tr>
-                                <th class="px-5 py-3 font-medium">Perangkat</th>
-                                <th class="px-5 py-3 font-medium">Outlet</th>
-                                <th class="px-5 py-3 font-medium">
-                                    Cash drawer
-                                </th>
-                                <th class="px-5 py-3 font-medium">
-                                    Sinkron terakhir
-                                </th>
-                                <th class="px-5 py-3 font-medium">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y">
-                            <tr
-                                v-for="device in devices"
-                                :key="device.id"
-                                class="hover:bg-muted/30"
-                            >
-                                <td class="px-5 py-4">
-                                    <span class="block font-medium">
-                                        {{ device.code }} · {{ device.name }}
-                                    </span>
-                                    <span
-                                        class="mt-1 block text-xs text-muted-foreground"
-                                    >
-                                        {{ device.platform }} · v{{
-                                            device.app_version ?? '—'
-                                        }}
-                                    </span>
-                                </td>
-                                <td class="px-5 py-4">
-                                    {{ device.outlet.name }}
-                                    <span
-                                        class="ml-1 text-xs text-muted-foreground"
-                                    >
-                                        {{ device.outlet.profit_center_code }}
-                                    </span>
-                                </td>
-                                <td class="px-5 py-4">
+                            <div>
+                                <dt
+                                    class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
+                                >
+                                    Kode outlet
+                                </dt>
+                                <dd class="mt-2 font-semibold">
+                                    {{ selectedOutlet.code }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt
+                                    class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
+                                >
+                                    Profit center
+                                </dt>
+                                <dd
+                                    class="mt-2 font-semibold text-[#163f35] dark:text-[#8db7aa]"
+                                >
+                                    {{ selectedOutlet.profit_center_code }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt
+                                    class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
+                                >
+                                    Awal hari usaha
+                                </dt>
+                                <dd class="mt-2 font-semibold">
                                     {{
-                                        device.cash_drawer?.name ??
-                                        'Tidak terhubung'
+                                        selectedOutlet.business_day_start.slice(
+                                            0,
+                                            5,
+                                        )
                                     }}
-                                </td>
-                                <td class="px-5 py-4">
-                                    {{ dateTime(device.last_sync_at) }}
-                                </td>
-                                <td class="px-5 py-4">
-                                    <Badge
-                                        :variant="
-                                            device.status === 'revoked'
-                                                ? 'destructive'
-                                                : 'outline'
-                                        "
-                                    >
-                                        {{ statusLabel(device.status) }}
-                                    </Badge>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
+                                </dd>
+                            </div>
+                            <div>
+                                <dt
+                                    class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
+                                >
+                                    Zona waktu
+                                </dt>
+                                <dd class="mt-2 font-semibold">
+                                    {{ selectedOutlet.timezone }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt
+                                    class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
+                                >
+                                    Stok minus
+                                </dt>
+                                <dd class="mt-2 font-semibold">
+                                    {{
+                                        selectedOutlet.prevent_negative_stock
+                                            ? 'Tidak diizinkan'
+                                            : 'Diizinkan'
+                                    }}
+                                </dd>
+                            </div>
+                            <div>
+                                <dt
+                                    class="text-xs font-medium tracking-wider text-muted-foreground uppercase"
+                                >
+                                    Kesiapan
+                                </dt>
+                                <dd
+                                    class="mt-2 flex items-center gap-2 font-semibold"
+                                >
+                                    <ShieldCheck
+                                        class="size-4 text-emerald-600"
+                                    />
+                                    {{ selectedOutlet.assignments_count }} staf
+                                    ·
+                                    {{ selectedOutlet.devices_count }} perangkat
+                                </dd>
+                            </div>
+                        </dl>
+                    </div>
+                </section>
+
+                <section
+                    v-else-if="activeTab?.id === 'staff'"
+                    class="overflow-hidden rounded-2xl border bg-card shadow-sm"
+                >
+                    <div class="flex items-center gap-3 border-b px-5 py-4">
+                        <Users class="size-5 text-[#a66d20]" />
+                        <div>
+                            <h2 class="font-semibold">Staf & akses</h2>
+                            <p class="text-xs text-muted-foreground">
+                                Satu orang dapat memiliki role berbeda pada
+                                outlet berbeda.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[720px] text-left text-sm">
+                            <thead
+                                class="bg-muted/60 text-xs tracking-wider text-muted-foreground uppercase"
+                            >
+                                <tr>
+                                    <th class="px-5 py-3 font-medium">Nama</th>
+                                    <th class="px-5 py-3 font-medium">
+                                        Outlet
+                                    </th>
+                                    <th class="px-5 py-3 font-medium">Peran</th>
+                                    <th class="px-5 py-3 font-medium">
+                                        Status
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                <tr
+                                    v-for="assignment in staff"
+                                    :key="assignment.id"
+                                    class="hover:bg-muted/30"
+                                >
+                                    <td class="px-5 py-4">
+                                        <span class="block font-medium">
+                                            {{ assignment.user.name }}
+                                        </span>
+                                        <span
+                                            class="mt-1 block text-xs text-muted-foreground"
+                                        >
+                                            {{ assignment.user.email }}
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-4">
+                                        {{ assignment.outlet.name }}
+                                    </td>
+                                    <td class="px-5 py-4 font-medium">
+                                        {{ assignment.role.name }}
+                                    </td>
+                                    <td class="px-5 py-4">
+                                        <Badge variant="outline">
+                                            {{
+                                                statusLabel(
+                                                    assignment.user.status,
+                                                )
+                                            }}
+                                        </Badge>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section
+                    v-else
+                    class="overflow-hidden rounded-2xl border bg-card shadow-sm"
+                >
+                    <div class="flex items-center gap-3 border-b px-5 py-4">
+                        <MonitorSmartphone class="size-5 text-[#a66d20]" />
+                        <div>
+                            <h2 class="font-semibold">Perangkat POS</h2>
+                            <p class="text-xs text-muted-foreground">
+                                Pemindahan outlet membutuhkan pencabutan dan
+                                registrasi ulang.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[820px] text-left text-sm">
+                            <thead
+                                class="bg-muted/60 text-xs tracking-wider text-muted-foreground uppercase"
+                            >
+                                <tr>
+                                    <th class="px-5 py-3 font-medium">
+                                        Perangkat
+                                    </th>
+                                    <th class="px-5 py-3 font-medium">
+                                        Outlet
+                                    </th>
+                                    <th class="px-5 py-3 font-medium">
+                                        Laci kas
+                                    </th>
+                                    <th class="px-5 py-3 font-medium">
+                                        Sinkron terakhir
+                                    </th>
+                                    <th class="px-5 py-3 font-medium">
+                                        Status
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y">
+                                <tr
+                                    v-for="device in devices"
+                                    :key="device.id"
+                                    class="hover:bg-muted/30"
+                                >
+                                    <td class="px-5 py-4">
+                                        <span class="block font-medium">
+                                            {{ device.code }} ·
+                                            {{ device.name }}
+                                        </span>
+                                        <span
+                                            class="mt-1 block text-xs text-muted-foreground"
+                                        >
+                                            {{ device.platform }} · v{{
+                                                device.app_version ?? '—'
+                                            }}
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-4">
+                                        {{ device.outlet.name }}
+                                        <span
+                                            class="ml-1 text-xs text-muted-foreground"
+                                        >
+                                            {{
+                                                device.outlet.profit_center_code
+                                            }}
+                                        </span>
+                                    </td>
+                                    <td class="px-5 py-4">
+                                        {{
+                                            device.cash_drawer?.name ??
+                                            'Tidak terhubung'
+                                        }}
+                                    </td>
+                                    <td class="px-5 py-4">
+                                        {{ dateTime(device.last_sync_at) }}
+                                    </td>
+                                    <td class="px-5 py-4">
+                                        <Badge
+                                            :variant="
+                                                device.status === 'revoked'
+                                                    ? 'destructive'
+                                                    : 'outline'
+                                            "
+                                        >
+                                            {{ statusLabel(device.status) }}
+                                        </Badge>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <footer
+                    v-if="records.total > 0"
+                    class="flex flex-col gap-3 rounded-xl border bg-card px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+                >
+                    <p class="text-muted-foreground">
+                        Menampilkan
+                        <span class="font-medium text-foreground">
+                            {{ records.from }}–{{ records.to }}
+                        </span>
+                        dari
+                        <span class="font-medium text-foreground">
+                            {{ records.total }}
+                        </span>
+                        data
+                    </p>
+
+                    <div class="flex items-center gap-2">
+                        <Button
+                            v-if="records.prev_page_url"
+                            variant="outline"
+                            size="sm"
+                            as-child
+                        >
+                            <Link
+                                :href="records.prev_page_url"
+                                preserve-scroll
+                                :only="[
+                                    'records',
+                                    'filters',
+                                    'selectedOutletId',
+                                ]"
+                            >
+                                <ChevronLeft class="size-4" />
+                                Sebelumnya
+                            </Link>
+                        </Button>
+                        <Button v-else variant="outline" size="sm" disabled>
+                            <ChevronLeft class="size-4" />
+                            Sebelumnya
+                        </Button>
+
+                        <span
+                            class="min-w-24 text-center text-xs text-muted-foreground"
+                        >
+                            Halaman {{ records.current_page }} dari
+                            {{ records.last_page }}
+                        </span>
+
+                        <Button
+                            v-if="records.next_page_url"
+                            variant="outline"
+                            size="sm"
+                            as-child
+                        >
+                            <Link
+                                :href="records.next_page_url"
+                                preserve-scroll
+                                :only="[
+                                    'records',
+                                    'filters',
+                                    'selectedOutletId',
+                                ]"
+                            >
+                                Berikutnya
+                                <ChevronRight class="size-4" />
+                            </Link>
+                        </Button>
+                        <Button v-else variant="outline" size="sm" disabled>
+                            Berikutnya
+                            <ChevronRight class="size-4" />
+                        </Button>
+                    </div>
+                </footer>
+            </template>
         </main>
 
         <Sheet :open="outletSheetOpen" @update:open="setOutletSheetOpen">
