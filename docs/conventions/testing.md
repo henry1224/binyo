@@ -11,7 +11,7 @@
 
 ## Quality gate saat ini
 
-Repository masih berisi dokumentasi. Gate aktif:
+Gate aktif:
 
 ```bash
 bin/verify.sh
@@ -22,8 +22,12 @@ Gate memeriksa:
 - Format dan tautan seluruh Markdown.
 - Trailing whitespace dan final newline.
 - Diff Git yang tidak valid.
+- Formatter, static analysis, dan feature test Laravel.
+- Lint, typecheck, dan build Vue/TypeScript.
 
-## Matriks verifikasi setelah aplikasi dibuat
+CI juga menjalankan migration fresh pada PostgreSQL `binyo_test`. Suite feature cepat tetap memakai SQLite in-memory; constraint dan perilaku khusus database harus memiliki pemeriksaan PostgreSQL.
+
+## Matriks verifikasi aplikasi
 
 | Perubahan | Pemeriksaan minimum |
 |---|---|
@@ -44,7 +48,7 @@ Gate memeriksa:
 
 Workflow [`.github/workflows/test.yml`](../../.github/workflows/test.yml) berjalan pada PR ke `main` dan push ke `main`.
 
-Job aplikasi ditambahkan saat scaffold tersedia. CI harus mencerminkan `bin/verify.sh`; pemeriksaan wajib tidak boleh hanya hidup di laptop developer.
+CI mencerminkan `bin/verify.sh` dan menambah pemeriksaan migrasi PostgreSQL; pemeriksaan wajib tidak boleh hanya hidup di laptop developer.
 
 ## Pelaporan hasil
 

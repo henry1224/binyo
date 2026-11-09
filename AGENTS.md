@@ -16,7 +16,7 @@ Binyo adalah sistem POS dengan dua permukaan:
 - Backoffice web untuk katalog, persediaan, pembelian, laporan, outlet, dan pengguna.
 - POS mobile untuk transaksi kasir, shift, pembayaran, struk, dan operasi offline sementara.
 
-Status repository saat ini adalah dokumentasi produk. Stack pada [fondasi teknis](docs/architecture/technical-foundation.md) masih rekomendasi sampai disetujui.
+Implementasi M1 berada di `apps/backoffice`. Stack pada [fondasi teknis](docs/architecture/technical-foundation.md) sudah diputuskan.
 
 ## Structure
 
@@ -32,6 +32,7 @@ docs/
 bin/                 # pemeriksaan lokal yang sama dengan CI
 .githooks/           # hook tim
 .github/workflows/   # CI
+apps/backoffice/     # Laravel, Inertia, Vue, TypeScript, dan test aplikasi
 ```
 
 ## Where to look
@@ -82,6 +83,6 @@ Saat aplikasi dibuat, `bin/verify.sh` dan CI wajib diperluas untuk formatter, st
 
 ## Current constraints
 
-- Belum ada aplikasi, dependency, database, atau environment runtime.
-- Remote `origin/main` belum tersedia pada saat bootstrap dokumentasi.
-- Hardware POS, payment provider, pajak, dan batas offline belum diputuskan.
+- POS Flutter belum dibuat; kontrak autentikasi, perangkat, outlet, dan permission diselesaikan lebih dulu.
+- Hardware POS, payment provider, dan pajak pilot belum diputuskan.
+- Suite cepat memakai SQLite in-memory; CI wajib memverifikasi migrasi PostgreSQL `binyo_test`.

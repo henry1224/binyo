@@ -26,6 +26,8 @@ Selesai bila tidak ada keputusan bisnis kritis yang diserahkan ke developer saat
 
 ## M1 - Fondasi dan backoffice dasar
 
+Status: sedang berjalan. Scaffold backoffice, autentikasi internal, bisnis, outlet, role per outlet, perangkat, seed demo, dan quality gate aplikasi sudah mulai diimplementasikan.
+
 - [ ] Autentikasi, bisnis, outlet, pengguna, peran, dan perangkat.
 - [ ] Produk, kategori, varian/SKU, modifier, pajak, dan harga outlet.
 - [ ] Impor produk CSV minimum.
