@@ -33,6 +33,7 @@ class SaveProductRequest extends FormRequest
             ],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:2000'],
+            'product_type' => ['required', Rule::in(['standard', 'recipe', 'ingredient', 'service'])],
             'display_order' => ['required', 'integer', 'between:0,65535'],
             'status' => ['required', Rule::in(['active', 'inactive'])],
             'variants' => ['required', 'array', 'min:1', 'max:50'],
@@ -40,8 +41,12 @@ class SaveProductRequest extends FormRequest
             'variants.*.name' => ['required', 'string', 'max:100'],
             'variants.*.sku' => ['required', 'string', 'max:64', 'regex:/^[A-Z0-9][A-Z0-9._-]*$/'],
             'variants.*.barcode' => ['nullable', 'string', 'max:64'],
+            'variants.*.base_unit_id' => [
+                'required',
+                'integer',
+                Rule::exists('units', 'id')->where('status', 'active'),
+            ],
             'variants.*.sell_price' => ['required', 'numeric', 'between:0,9999999999999.99'],
-            'variants.*.default_purchase_cost' => ['nullable', 'numeric', 'between:0,9999999999999.99'],
             'variants.*.track_stock' => ['required', 'boolean'],
             'variants.*.status' => ['required', Rule::in(['active', 'inactive'])],
             'variants.*.outlets' => ['present', 'array'],
@@ -52,6 +57,18 @@ class SaveProductRequest extends FormRequest
             ],
             'variants.*.outlets.*.is_available' => ['required', 'boolean'],
             'variants.*.outlets.*.price_override' => ['nullable', 'numeric', 'between:0,9999999999999.99'],
+            'variants.*.purchase_units' => ['present', 'array', 'max:20'],
+            'variants.*.purchase_units.*.unit_id' => [
+                'required',
+                'integer',
+                Rule::exists('units', 'id')->where('status', 'active'),
+            ],
+            'variants.*.purchase_units.*.conversion_factor_to_base' => [
+                'required',
+                'numeric',
+                'gt:0',
+                'max:999999999999.999999',
+            ],
         ];
     }
 
@@ -133,6 +150,7 @@ class SaveProductRequest extends FormRequest
                 $variantId = isset($variant['id']) ? (int) $variant['id'] : null;
                 $sku = $variant['sku'] ?? null;
                 $barcode = $variant['barcode'] ?? null;
+                $baseUnitId = isset($variant['base_unit_id']) ? (int) $variant['base_unit_id'] : 0;
 
                 if (is_string($sku) && $usedSkus->has($sku) && $usedSkus->get($sku)?->id !== $variantId) {
                     $validator->errors()->add("variants.{$index}.sku", 'Kode produk sudah dipakai.');
@@ -164,18 +182,58 @@ class SaveProductRequest extends FormRequest
                         'Pengaturan harga harus mencakup setiap outlet bisnis tepat satu kali.',
                     );
                 }
+
+                $purchaseUnits = $variant['purchase_units'] ?? [];
+
+                if (! is_array($purchaseUnits)) {
+                    $purchaseUnits = [];
+                }
+
+                $purchaseUnitIds = collect($purchaseUnits)
+                    ->filter(fn (mixed $unit): bool => is_array($unit) && is_numeric($unit['unit_id'] ?? null))
+                    ->map(fn (array $unit): int => (int) $unit['unit_id'])
+                    ->values();
+
+                if ($purchaseUnitIds->unique()->count() !== $purchaseUnitIds->count()) {
+                    $validator->errors()->add(
+                        "variants.{$index}.purchase_units",
+                        'Satuan beli tidak boleh duplikat.',
+                    );
+                }
+
+                if ($baseUnitId > 0 && $purchaseUnitIds->contains($baseUnitId)) {
+                    $validator->errors()->add(
+                        "variants.{$index}.purchase_units",
+                        'Satuan beli tidak boleh sama dengan satuan dasar.',
+                    );
+                }
             }
         }];
     }
 
     protected function prepareForValidation(): void
     {
+        $productType = mb_strtolower(trim((string) $this->input('product_type', 'standard')));
         $variants = $this->input('variants', []);
 
         if (is_array($variants)) {
-            $variants = array_map(function (mixed $variant): mixed {
+            $variants = array_map(function (mixed $variant) use ($productType): mixed {
                 if (! is_array($variant)) {
                     return $variant;
+                }
+
+                $trackStock = $productType === 'ingredient'
+                    || ($productType === 'standard' && filter_var($variant['track_stock'] ?? false, FILTER_VALIDATE_BOOL));
+                $outlets = $variant['outlets'] ?? [];
+
+                if ($productType === 'ingredient' && is_array($outlets)) {
+                    $outlets = array_map(function (mixed $outlet): mixed {
+                        if (! is_array($outlet)) {
+                            return $outlet;
+                        }
+
+                        return [...$outlet, 'is_available' => false, 'price_override' => null];
+                    }, $outlets);
                 }
 
                 return [
@@ -185,6 +243,12 @@ class SaveProductRequest extends FormRequest
                     'barcode' => filled($variant['barcode'] ?? null)
                         ? mb_strtoupper(trim((string) $variant['barcode']))
                         : null,
+                    'sell_price' => $productType === 'ingredient' ? 0 : ($variant['sell_price'] ?? null),
+                    'track_stock' => $trackStock,
+                    'outlets' => $outlets,
+                    'purchase_units' => $trackStock
+                        ? ($variant['purchase_units'] ?? [])
+                        : [],
                 ];
             }, $variants);
         }
@@ -194,6 +258,7 @@ class SaveProductRequest extends FormRequest
             'description' => filled($this->input('description'))
                 ? trim((string) $this->input('description'))
                 : null,
+            'product_type' => $productType,
             'variants' => $variants,
         ]);
     }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { Building2, PackageOpen } from '@lucide/vue';
+import { Boxes, Building2, PackageOpen } from '@lucide/vue';
 import AppLogo from '@/components/AppLogo.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -20,6 +20,11 @@ const mainNavItems: NavItem[] = [
         title: 'Katalog',
         href: '/catalog',
         icon: PackageOpen,
+    },
+    {
+        title: 'Persediaan',
+        href: '/inventory',
+        icon: Boxes,
     },
     {
         title: 'Operasional',

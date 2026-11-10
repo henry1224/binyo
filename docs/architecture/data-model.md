@@ -153,16 +153,14 @@ Kolom implementasi awal `default_purchase_cost` bukan sumber kebenaran model tar
 
 ### units dan product_units
 
-`units` menyimpan kode dan jenis satuan, misalnya `pcs`, `gr`, `kg`, `ml`, atau `liter`.
+`units` adalah referensi global tetap yang menyimpan kode, nama, jenis ukuran, dan status. Preset awal: `pcs`, `porsi`, `gr`, `kg`, `ml`, `liter`, `botol`, dan `karton`.
 
 `product_units` menyimpan:
 
 - `product_variant_id`, `unit_id`
 - `conversion_factor_to_base`
-- `is_purchase_unit`, `is_sale_unit`
-- `barcode` opsional
 
-Satu SKU memiliki satu base unit. Konversi tidak boleh melintasi jenis satuan tanpa aturan produk yang eksplisit; `kg` ke `gr` valid, tetapi `liter` ke `pcs` tidak diasumsikan sistem.
+Baris `product_units` hanya menyimpan satuan beli; satuan dasar tidak perlu diduplikasi sebagai baris konversi. Satu SKU memiliki satu base unit. Satuan beli tidak boleh duplikat atau sama dengan satuan dasar. Konversi lintas jenis hanya berlaku sebagai aturan eksplisit produk, misalnya `1 botol = 750 ml`; sistem tidak membuat asumsi konversi otomatis.
 
 ### outlet_products
 

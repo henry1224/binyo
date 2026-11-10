@@ -40,6 +40,15 @@ type Category = {
 
 type Outlet = { id: number; code: string; name: string };
 
+type Unit = {
+    id: number;
+    code: string;
+    name: string;
+    dimension: string;
+};
+
+type ProductType = 'standard' | 'recipe' | 'ingredient' | 'service';
+
 type OutletPrice = {
     outlet_id: number;
     is_available: boolean;
@@ -52,17 +61,23 @@ type OutletPriceForm = {
     price_override: string;
 };
 
+type PurchaseUnit = {
+    unit_id: number;
+    conversion_factor_to_base: string;
+};
+
 type Variant = {
     id?: number;
     name: string;
     sku: string;
     barcode: string | null;
+    base_unit_id: number;
     sell_price: string;
-    default_purchase_cost: string | null;
     track_stock: boolean;
     is_default?: boolean;
     status: 'active' | 'inactive';
     outlet_products?: OutletPrice[];
+    product_units?: PurchaseUnit[];
 };
 
 type Product = {
@@ -70,6 +85,7 @@ type Product = {
     category_id: number;
     name: string;
     description: string | null;
+    product_type: ProductType;
     status: 'active' | 'inactive';
     display_order: number;
     variants_count: number;
@@ -89,11 +105,12 @@ type VariantForm = {
     name: string;
     sku: string;
     barcode: string;
+    base_unit_id: number;
     sell_price: string;
-    default_purchase_cost: string;
     track_stock: boolean;
     status: 'active' | 'inactive';
     outlets: OutletPriceForm[];
+    purchase_units: PurchaseUnit[];
 };
 
 type Paginated<T> = {
@@ -113,6 +130,7 @@ const props = defineProps<{
     products: Paginated<Product>;
     categories: Category[];
     outlets: Outlet[];
+    units: Unit[];
     summary: {
         categories: number;
         products: number;
@@ -139,6 +157,36 @@ const categorySheetOpen = ref(false);
 const productSheetOpen = ref(false);
 const editingCategory = ref<Category | null>(null);
 const editingProductId = ref<number | null>(props.editingProduct?.id ?? null);
+const productTypes: Array<{
+    value: ProductType;
+    label: string;
+    description: string;
+}> = [
+    {
+        value: 'standard',
+        label: 'Produk jual langsung',
+        description: 'Dijual di POS dan dapat melacak stoknya sendiri.',
+    },
+    {
+        value: 'recipe',
+        label: 'Menu racikan',
+        description: 'Dijual di POS dan mengurangi bahan pada resep.',
+    },
+    {
+        value: 'ingredient',
+        label: 'Bahan atau kemasan',
+        description: 'Dibeli dan dilacak stoknya, tetapi tidak tampil di POS.',
+    },
+    {
+        value: 'service',
+        label: 'Layanan tanpa stok',
+        description: 'Dijual di POS tanpa mengubah stok.',
+    },
+];
+const defaultUnitId = () =>
+    props.units.find((unit) => unit.code === 'pcs')?.id ??
+    props.units[0]?.id ??
+    0;
 
 const emptyOutletPrices = (): OutletPriceForm[] =>
     props.outlets.map((outlet) => ({
@@ -151,11 +199,12 @@ const emptyVariant = (name = 'Reguler'): VariantForm => ({
     name,
     sku: '',
     barcode: '',
+    base_unit_id: defaultUnitId(),
     sell_price: '',
-    default_purchase_cost: '',
     track_stock: false,
     status: 'active',
     outlets: emptyOutletPrices(),
+    purchase_units: [],
 });
 
 const categoryForm = useForm({
@@ -168,6 +217,7 @@ const productForm = useForm({
     category_id: props.categories[0]?.id ?? 0,
     name: '',
     description: null as string | null,
+    product_type: 'standard' as ProductType,
     display_order: 0,
     status: 'active' as 'active' | 'inactive',
     variants: [emptyVariant()] as VariantForm[],
@@ -182,6 +232,14 @@ const hasFilters = computed(
         props.filters.category > 0 ||
         props.filters.outlet > 0 ||
         props.filters.status !== 'all',
+);
+const selectedProductType = computed(
+    () =>
+        productTypes.find((type) => type.value === productForm.product_type) ??
+        productTypes[0],
+);
+const productIsSellable = computed(
+    () => productForm.product_type !== 'ingredient',
 );
 
 const indexUrl = (
@@ -279,6 +337,7 @@ const fillProductForm = (product: EditingProduct | null) => {
         product?.category_id ?? props.categories[0]?.id ?? 0;
     productForm.name = product?.name ?? '';
     productForm.description = product?.description ?? null;
+    productForm.product_type = product?.product_type ?? 'standard';
     productForm.display_order = product?.display_order ?? 0;
     productForm.status = product?.status ?? 'active';
     productForm.variants = product?.variants.length
@@ -295,8 +354,8 @@ const fillProductForm = (product: EditingProduct | null) => {
                   name: variant.name,
                   sku: variant.sku,
                   barcode: variant.barcode ?? '',
+                  base_unit_id: variant.base_unit_id,
                   sell_price: variant.sell_price,
-                  default_purchase_cost: variant.default_purchase_cost ?? '',
                   track_stock: variant.track_stock,
                   status: variant.status,
                   outlets: props.outlets.map((outlet) => ({
@@ -306,6 +365,12 @@ const fillProductForm = (product: EditingProduct | null) => {
                       price_override:
                           outletPrices.get(outlet.id)?.price_override ?? '',
                   })),
+                  purchase_units:
+                      variant.product_units?.map((unit) => ({
+                          unit_id: unit.unit_id,
+                          conversion_factor_to_base:
+                              unit.conversion_factor_to_base,
+                      })) ?? [],
               };
           })
         : [emptyVariant()];
@@ -353,6 +418,56 @@ const removeVariant = (index: number) => {
     }
 };
 
+const supportsPurchaseUnits = (variant: VariantForm) =>
+    productForm.product_type === 'ingredient' ||
+    (productForm.product_type === 'standard' && variant.track_stock);
+
+const availablePurchaseUnits = (
+    variant: VariantForm,
+    selectedUnitId: number,
+) => {
+    const used = new Set(
+        variant.purchase_units
+            .map((unit) => unit.unit_id)
+            .filter((unitId) => unitId !== selectedUnitId),
+    );
+
+    return props.units.filter(
+        (unit) => unit.id !== variant.base_unit_id && !used.has(unit.id),
+    );
+};
+
+const addPurchaseUnit = (variant: VariantForm) => {
+    const unit = availablePurchaseUnits(variant, 0)[0];
+
+    if (unit) {
+        variant.purchase_units.push({
+            unit_id: unit.id,
+            conversion_factor_to_base: '',
+        });
+    }
+};
+
+const removePurchaseUnit = (variant: VariantForm, index: number) => {
+    variant.purchase_units.splice(index, 1);
+};
+
+const changeBaseUnit = (variant: VariantForm) => {
+    variant.purchase_units = variant.purchase_units.filter(
+        (unit) => unit.unit_id !== variant.base_unit_id,
+    );
+};
+
+const changeTrackStock = (variant: VariantForm) => {
+    if (!variant.track_stock) variant.purchase_units = [];
+};
+
+const productTypeLabel = (type: ProductType) =>
+    productTypes.find((option) => option.value === type)?.label ?? type;
+
+const unitName = (unitId: number) =>
+    props.units.find((unit) => unit.id === unitId)?.name ?? 'satuan dasar';
+
 const saveProduct = () => {
     const options = {
         preserveScroll: true,
@@ -379,6 +494,28 @@ const formatCurrency = (value: string | number | null) =>
         currency: props.business.currency,
         maximumFractionDigits: 0,
     }).format(Number(value ?? 0));
+
+watch(
+    () => productForm.product_type,
+    (type) => {
+        productForm.variants.forEach((variant) => {
+            if (type === 'ingredient') {
+                variant.sell_price = '0';
+                variant.track_stock = true;
+                variant.outlets.forEach((outlet) => {
+                    outlet.is_available = false;
+                    outlet.price_override = '';
+                });
+                return;
+            }
+
+            if (type === 'recipe' || type === 'service') {
+                variant.track_stock = false;
+                variant.purchase_units = [];
+            }
+        });
+    },
+);
 
 watch(
     () => props.filters,
@@ -811,6 +948,12 @@ defineOptions({
                                                         >{{
                                                             product.category
                                                                 .name
+                                                        }}
+                                                        ·
+                                                        {{
+                                                            productTypeLabel(
+                                                                product.product_type,
+                                                            )
                                                         }}</span
                                                     >
                                                 </span>
@@ -825,12 +968,24 @@ defineOptions({
                                         <td
                                             class="px-4 py-4 text-right font-medium tabular-nums"
                                         >
-                                            {{
-                                                formatCurrency(
-                                                    product.default_variant
-                                                        ?.sell_price ?? 0,
-                                                )
-                                            }}
+                                            <template
+                                                v-if="
+                                                    product.product_type !==
+                                                    'ingredient'
+                                                "
+                                            >
+                                                {{
+                                                    formatCurrency(
+                                                        product.default_variant
+                                                            ?.sell_price ?? 0,
+                                                    )
+                                                }}
+                                            </template>
+                                            <span
+                                                v-else
+                                                class="text-sm text-muted-foreground"
+                                                >Tidak dijual</span
+                                            >
                                         </td>
                                         <td
                                             class="px-4 py-4 text-center tabular-nums"
@@ -890,6 +1045,12 @@ defineOptions({
                                         >
                                             {{ product.category.name }} ·
                                             {{
+                                                productTypeLabel(
+                                                    product.product_type,
+                                                )
+                                            }}
+                                            ·
+                                            {{
                                                 product.default_variant?.sku ??
                                                 'Tanpa kode'
                                             }}
@@ -919,12 +1080,20 @@ defineOptions({
                                         <p
                                             class="mt-1 font-semibold tabular-nums"
                                         >
-                                            {{
-                                                formatCurrency(
-                                                    product.default_variant
-                                                        ?.sell_price ?? 0,
-                                                )
-                                            }}
+                                            <template
+                                                v-if="
+                                                    product.product_type !==
+                                                    'ingredient'
+                                                "
+                                            >
+                                                {{
+                                                    formatCurrency(
+                                                        product.default_variant
+                                                            ?.sell_price ?? 0,
+                                                    )
+                                                }}
+                                            </template>
+                                            <span v-else>Tidak dijual</span>
                                         </p>
                                     </div>
                                     <Badge variant="outline"
@@ -1182,6 +1351,28 @@ defineOptions({
                                 />
                             </div>
                             <div class="grid gap-2 md:col-span-2">
+                                <Label for="product-type">Jenis produk</Label>
+                                <select
+                                    id="product-type"
+                                    v-model="productForm.product_type"
+                                    class="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                                >
+                                    <option
+                                        v-for="type in productTypes"
+                                        :key="type.value"
+                                        :value="type.value"
+                                    >
+                                        {{ type.label }}
+                                    </option>
+                                </select>
+                                <p class="text-xs text-muted-foreground">
+                                    {{ selectedProductType.description }}
+                                </p>
+                                <InputError
+                                    :message="productForm.errors.product_type"
+                                />
+                            </div>
+                            <div class="grid gap-2 md:col-span-2">
                                 <Label for="product-description"
                                     >Deskripsi
                                     <span
@@ -1357,6 +1548,41 @@ defineOptions({
                                     </div>
                                     <div class="grid gap-2">
                                         <Label
+                                            :for="`variant-unit-${variantIndex}`"
+                                            >Satuan dasar</Label
+                                        >
+                                        <select
+                                            :id="`variant-unit-${variantIndex}`"
+                                            v-model.number="
+                                                variant.base_unit_id
+                                            "
+                                            class="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                                            required
+                                            @change="changeBaseUnit(variant)"
+                                        >
+                                            <option
+                                                v-for="unit in units"
+                                                :key="unit.id"
+                                                :value="unit.id"
+                                            >
+                                                {{ unit.name }} ({{
+                                                    unit.code
+                                                }})
+                                            </option>
+                                        </select>
+                                        <InputError
+                                            :message="
+                                                errorFor(
+                                                    `variants.${variantIndex}.base_unit_id`,
+                                                )
+                                            "
+                                        />
+                                    </div>
+                                    <div
+                                        v-if="productIsSellable"
+                                        class="grid gap-2"
+                                    >
+                                        <Label
                                             :for="`variant-price-${variantIndex}`"
                                             >Harga jual</Label
                                         >
@@ -1385,6 +1611,13 @@ defineOptions({
                                             "
                                         />
                                     </div>
+                                    <div
+                                        v-else
+                                        class="rounded-xl border border-dashed bg-muted/30 p-3 text-sm text-muted-foreground"
+                                    >
+                                        Bahan dan kemasan tidak memiliki harga
+                                        jual karena tidak tampil di POS.
+                                    </div>
                                     <div class="grid gap-2">
                                         <Label
                                             :for="`variant-barcode-${variantIndex}`"
@@ -1409,36 +1642,39 @@ defineOptions({
                                         />
                                     </div>
                                     <div class="grid gap-2">
-                                        <Label
-                                            :for="`variant-cost-${variantIndex}`"
-                                            >Harga modal
-                                            <span
-                                                class="font-normal text-muted-foreground"
-                                                >(opsional)</span
-                                            ></Label
+                                        <Label>Pelacakan stok</Label>
+                                        <label
+                                            v-if="
+                                                productForm.product_type ===
+                                                'standard'
+                                            "
+                                            class="flex min-h-9 items-center gap-3 rounded-md border px-3 text-sm"
                                         >
-                                        <div class="relative">
-                                            <span
-                                                class="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-xs text-muted-foreground"
-                                                >Rp</span
-                                            >
-                                            <Input
-                                                :id="`variant-cost-${variantIndex}`"
-                                                v-model="
-                                                    variant.default_purchase_cost
+                                            <input
+                                                v-model="variant.track_stock"
+                                                type="checkbox"
+                                                class="size-4 rounded border-input accent-[#163f35]"
+                                                @change="
+                                                    changeTrackStock(variant)
                                                 "
-                                                type="number"
-                                                min="0"
-                                                step="1"
-                                                inputmode="decimal"
-                                                class="pl-9"
-                                                placeholder="12000"
                                             />
-                                        </div>
+                                            Lacak jumlah stok produk ini
+                                        </label>
+                                        <p
+                                            v-else
+                                            class="flex min-h-9 items-center rounded-md border bg-muted/30 px-3 text-sm text-muted-foreground"
+                                        >
+                                            {{
+                                                productForm.product_type ===
+                                                'ingredient'
+                                                    ? 'Wajib dilacak sebagai bahan atau kemasan.'
+                                                    : 'Stok tidak disimpan pada produk ini.'
+                                            }}
+                                        </p>
                                         <InputError
                                             :message="
                                                 errorFor(
-                                                    `variants.${variantIndex}.default_purchase_cost`,
+                                                    `variants.${variantIndex}.track_stock`,
                                                 )
                                             "
                                         />
@@ -1470,7 +1706,148 @@ defineOptions({
                                     </div>
                                 </div>
 
-                                <div class="border-t px-4 py-4">
+                                <div
+                                    v-if="supportsPurchaseUnits(variant)"
+                                    class="border-t px-4 py-4"
+                                >
+                                    <div
+                                        class="mb-3 flex items-center justify-between gap-3"
+                                    >
+                                        <div>
+                                            <p class="text-sm font-semibold">
+                                                Satuan beli
+                                            </p>
+                                            <p
+                                                class="mt-1 text-xs text-muted-foreground"
+                                            >
+                                                Contoh: 1 botol = 750
+                                                {{
+                                                    unitName(
+                                                        variant.base_unit_id,
+                                                    )
+                                                }}.
+                                            </p>
+                                        </div>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            :disabled="
+                                                availablePurchaseUnits(
+                                                    variant,
+                                                    0,
+                                                ).length === 0
+                                            "
+                                            @click="addPurchaseUnit(variant)"
+                                        >
+                                            <Plus class="size-4" /> Tambah
+                                            satuan
+                                        </Button>
+                                    </div>
+                                    <InputError
+                                        :message="
+                                            errorFor(
+                                                `variants.${variantIndex}.purchase_units`,
+                                            )
+                                        "
+                                    />
+                                    <div
+                                        v-if="variant.purchase_units.length"
+                                        class="space-y-2"
+                                    >
+                                        <div
+                                            v-for="(
+                                                purchaseUnit, purchaseUnitIndex
+                                            ) in variant.purchase_units"
+                                            :key="purchaseUnitIndex"
+                                            class="grid gap-2 rounded-xl border p-3 sm:grid-cols-[minmax(10rem,1fr)_minmax(10rem,1fr)_auto] sm:items-start"
+                                        >
+                                            <div class="grid gap-1.5">
+                                                <Label
+                                                    :for="`purchase-unit-${variantIndex}-${purchaseUnitIndex}`"
+                                                    >Satuan</Label
+                                                >
+                                                <select
+                                                    :id="`purchase-unit-${variantIndex}-${purchaseUnitIndex}`"
+                                                    v-model.number="
+                                                        purchaseUnit.unit_id
+                                                    "
+                                                    class="h-9 rounded-md border border-input bg-background px-3 text-sm shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+                                                >
+                                                    <option
+                                                        v-for="unit in availablePurchaseUnits(
+                                                            variant,
+                                                            purchaseUnit.unit_id,
+                                                        )"
+                                                        :key="unit.id"
+                                                        :value="unit.id"
+                                                    >
+                                                        {{ unit.name }}
+                                                    </option>
+                                                </select>
+                                                <InputError
+                                                    :message="
+                                                        errorFor(
+                                                            `variants.${variantIndex}.purchase_units.${purchaseUnitIndex}.unit_id`,
+                                                        )
+                                                    "
+                                                />
+                                            </div>
+                                            <div class="grid gap-1.5">
+                                                <Label
+                                                    :for="`purchase-factor-${variantIndex}-${purchaseUnitIndex}`"
+                                                    >Jumlah satuan dasar</Label
+                                                >
+                                                <Input
+                                                    :id="`purchase-factor-${variantIndex}-${purchaseUnitIndex}`"
+                                                    v-model="
+                                                        purchaseUnit.conversion_factor_to_base
+                                                    "
+                                                    type="number"
+                                                    min="0.000001"
+                                                    step="0.000001"
+                                                    inputmode="decimal"
+                                                    placeholder="750"
+                                                />
+                                                <InputError
+                                                    :message="
+                                                        errorFor(
+                                                            `variants.${variantIndex}.purchase_units.${purchaseUnitIndex}.conversion_factor_to_base`,
+                                                        )
+                                                    "
+                                                />
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                class="mt-6 text-muted-foreground hover:text-destructive"
+                                                :aria-label="`Hapus satuan beli ${purchaseUnitIndex + 1}`"
+                                                @click="
+                                                    removePurchaseUnit(
+                                                        variant,
+                                                        purchaseUnitIndex,
+                                                    )
+                                                "
+                                            >
+                                                <Trash2 class="size-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    <p
+                                        v-else
+                                        class="rounded-xl border border-dashed px-3 py-4 text-sm text-muted-foreground"
+                                    >
+                                        Gunakan satuan dasar saat membeli, atau
+                                        tambahkan kemasan seperti botol dan
+                                        karton.
+                                    </p>
+                                </div>
+
+                                <div
+                                    v-if="productIsSellable"
+                                    class="border-t px-4 py-4"
+                                >
                                     <div class="mb-3 flex items-center gap-2">
                                         <CircleDollarSign
                                             class="size-4 text-[#a66d20]"
