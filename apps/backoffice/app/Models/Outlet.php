@@ -47,6 +47,12 @@ class Outlet extends Model
         return $this->hasMany(CashDrawer::class);
     }
 
+    /** @return HasMany<OutletProduct, $this> */
+    public function outletProducts(): HasMany
+    {
+        return $this->hasMany(OutletProduct::class);
+    }
+
     /** @return Attribute<bool, never> */
     protected function preventNegativeStock(): Attribute
     {

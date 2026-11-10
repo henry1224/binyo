@@ -4,9 +4,13 @@ namespace Database\Seeders;
 
 use App\Models\Business;
 use App\Models\CashDrawer;
+use App\Models\Category;
 use App\Models\Device;
 use App\Models\Outlet;
+use App\Models\OutletProduct;
 use App\Models\Permission;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserOutletRole;
@@ -48,6 +52,7 @@ class DatabaseSeeder extends Seeder
         $permissionDescriptions = [
             'outlet.view_all' => 'Melihat seluruh outlet dalam bisnis',
             'operations.manage' => 'Mengelola outlet, staf, dan perangkat',
+            'catalog.manage' => 'Mengelola kategori, produk, pilihan, dan harga outlet',
             'pos.sell' => 'Menjalankan transaksi penjualan',
             'cash.movement.create' => 'Mencatat kas masuk dan kas keluar',
             'sale.void' => 'Menyetujui void transaksi',
@@ -63,8 +68,9 @@ class DatabaseSeeder extends Seeder
         }
 
         $rolePermissions = [
+            'Superadmin' => array_keys($permissionDescriptions),
             'Pemilik' => array_keys($permissionDescriptions),
-            'Manajer' => ['pos.sell', 'cash.movement.create', 'sale.void', 'sale.refund', 'stock.manage', 'purchase.receive'],
+            'Manajer' => ['catalog.manage', 'pos.sell', 'cash.movement.create', 'sale.void', 'sale.refund', 'stock.manage', 'purchase.receive'],
             'Kasir' => ['pos.sell', 'cash.movement.create'],
             'Gudang' => ['stock.manage', 'purchase.receive'],
         ];
@@ -80,6 +86,7 @@ class DatabaseSeeder extends Seeder
         });
 
         $users = collect([
+            'admin@gmail.com' => ['name' => 'Admin', 'role' => 'Superadmin', 'outlets' => ['KU', 'KT']],
             'owner@binyo.test' => ['name' => 'Henry', 'role' => 'Pemilik', 'outlets' => ['KU', 'KT']],
             'manager@binyo.test' => ['name' => 'Rina', 'role' => 'Manajer', 'outlets' => ['KU']],
             'cashier.one@binyo.test' => ['name' => 'Ayu', 'role' => 'Kasir', 'outlets' => ['KU']],
@@ -140,6 +147,56 @@ class DatabaseSeeder extends Seeder
                     'status' => $device['status'],
                 ],
             );
+        }
+
+        $categories = collect([
+            ['name' => 'Kopi', 'display_order' => 10],
+            ['name' => 'Pastry', 'display_order' => 20],
+        ])->mapWithKeys(function (array $data) use ($business): array {
+            $category = Category::query()->firstOrCreate(
+                ['business_id' => $business->id, 'name' => $data['name']],
+                ['display_order' => $data['display_order'], 'status' => 'active'],
+            );
+
+            return [$data['name'] => $category];
+        });
+
+        foreach ([
+            ['category' => 'Kopi', 'name' => 'Cafe Latte', 'sku' => 'LATTE', 'price' => 28000],
+            ['category' => 'Kopi', 'name' => 'Americano', 'sku' => 'AMERICANO', 'price' => 22000],
+            ['category' => 'Pastry', 'name' => 'Butter Croissant', 'sku' => 'CROISSANT', 'price' => 25000],
+        ] as $index => $data) {
+            $product = Product::query()->firstOrCreate(
+                ['business_id' => $business->id, 'name' => $data['name']],
+                [
+                    'category_id' => $categories->get($data['category'])->id,
+                    'product_type' => 'standard',
+                    'status' => 'active',
+                    'display_order' => ($index + 1) * 10,
+                ],
+            );
+            $variant = ProductVariant::query()->firstOrCreate(
+                ['business_id' => $business->id, 'sku' => $data['sku']],
+                [
+                    'product_id' => $product->id,
+                    'name' => 'Reguler',
+                    'sell_price' => $data['price'],
+                    'track_stock' => false,
+                    'is_default' => true,
+                    'status' => 'active',
+                ],
+            );
+
+            foreach ($outlets as $outlet) {
+                OutletProduct::query()->firstOrCreate(
+                    [
+                        'business_id' => $business->id,
+                        'outlet_id' => $outlet->id,
+                        'product_variant_id' => $variant->id,
+                    ],
+                    ['is_available' => true],
+                );
+            }
         }
 
         $this->command?->info("Demo siap. Login: {$users->keys()->first()} / password");

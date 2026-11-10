@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\OperationalController;
 use Illuminate\Support\Facades\Route;
 
@@ -7,6 +8,17 @@ Route::redirect('/', '/dashboard')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::redirect('dashboard', '/operational')->name('dashboard');
+    Route::get('catalog', CatalogController::class)->name('catalog.index');
+    Route::post('catalog/categories', [CatalogController::class, 'storeCategory'])
+        ->name('catalog.categories.store');
+    Route::put('catalog/categories/{category}', [CatalogController::class, 'updateCategory'])
+        ->whereNumber('category')
+        ->name('catalog.categories.update');
+    Route::post('catalog/products', [CatalogController::class, 'storeProduct'])
+        ->name('catalog.products.store');
+    Route::put('catalog/products/{product}', [CatalogController::class, 'updateProduct'])
+        ->whereNumber('product')
+        ->name('catalog.products.update');
     Route::get('operational', OperationalController::class)->name('operational.index');
     Route::post('operational/outlets', [OperationalController::class, 'store'])
         ->name('operational.outlets.store');
