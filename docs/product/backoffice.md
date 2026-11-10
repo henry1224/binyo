@@ -36,7 +36,7 @@ Dashboard tidak menampilkan grafik yang tidak menghasilkan tindakan.
 - Kategori.
 - Modifier.
 - Harga per outlet.
-- Resep dan HPP bila dipakai.
+- Resep dan harga modal bila dipakai.
 - Promo sederhana.
 - Impor dan ekspor katalog.
 
@@ -66,7 +66,7 @@ Merek dan atribut tidak menjadi menu terpisah pada MVP. Keduanya ditambahkan han
 - Kasir dan shift.
 - Stok.
 - Pembelian.
-- HPP dan laba kotor perkiraan.
+- Harga modal dan laba kotor perkiraan.
 - Pajak dan service charge.
 
 Semua laporan memakai pola sama: rentang tanggal, outlet, filter terkait, ringkasan, tabel, lalu ekspor CSV.

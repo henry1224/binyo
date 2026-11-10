@@ -27,6 +27,15 @@ flowchart LR
     Close --> Report[Laporan pemilik]
 ```
 
+### Status implementasi
+
+- `Done`: autentikasi, profil, outlet, kategori, produk, pilihan produk, harga/ketersediaan outlet, pencarian, filter, pagination, tema, seed superadmin, dan quality gate.
+- `Partial`: daftar staf, peran, perangkat, dan laci kas; mutasi UI baru tersedia untuk outlet.
+- `Next`: M2 fondasi produk dan stok — jenis produk, satuan, konversi, stok awal, pergerakan, dan saldo per outlet.
+- `Not started`: pemasok, pembelian, penerimaan, resep, penjualan, pembayaran, shift, laporan, dan offline.
+
+Urutan dan gerbang penerimaan mengikuti [`delivery/roadmap.md`](delivery/roadmap.md). POS tidak dibangun sebelum fondasi stok dan harga modal stabil.
+
 ## 3. Batas MVP
 
 ### Termasuk
@@ -60,14 +69,16 @@ Master data kecil, pembelian, pelanggan, dan proses transfer tidak menjadi menu 
 ## 4. Keputusan data
 
 - Varian/SKU adalah unit jual; produk tanpa pilihan memiliki satu varian default.
+- Kategori hanya untuk pengelompokan; jenis produk menentukan perilaku penjualan, pembelian, resep, dan stok.
+- Jenis produk minimum: `standard`, `recipe`, `ingredient`, dan `service`; kemasan memakai `ingredient` dengan kategori `Kemasan`.
 - Transaksi menyimpan snapshot nama, harga, pajak, biaya, dan modifier.
 - Pergerakan stok adalah sumber kebenaran; saldo adalah agregasi/cache.
-- Setiap SKU memiliki satu base unit; satuan beli dikonversi memakai faktor yang disimpan sebagai snapshot.
-- Penerimaan barang memperbarui HPP rata-rata bergerak per SKU dan outlet.
-- Penjualan menyimpan snapshot HPP produk atau resep; histori laba tidak berubah karena pembelian berikutnya.
+- Setiap SKU memiliki satu satuan dasar; satuan beli dikonversi memakai faktor yang disalin ke dokumen penerimaan.
+- Penerimaan barang memperbarui harga modal rata-rata bergerak per SKU dan outlet.
+- Penjualan menyimpan snapshot harga modal produk atau resep; histori laba tidak berubah karena pembelian berikutnya.
 - Larangan stok minus aktif secara default per outlet; bila dinonaktifkan, transaksi tetap berjalan tetapi saldo minus ditandai untuk rekonsiliasi.
 - Split bill mengalokasikan pembayaran ke baris atau sebagian jumlah item tanpa membatalkan atau menggandakan transaksi asal.
-- Transaksi selesai tidak dihapus atau ditimpa; koreksi memakai void, refund, atau reversal.
+- Transaksi selesai tidak dihapus atau ditimpa; koreksi memakai void, refund, atau pembalikan.
 - Idempotency transaksi dan pembayaran dilindungi unique constraint.
 - Pembayaran non-tunai manual direkonsiliasi tanpa mengubah transaksi asli.
 - Shift offline baru final setelah seluruh urutan transaksi sampai batas penutupan diterima server.
@@ -75,12 +86,12 @@ Master data kecil, pembelian, pelanggan, dan proses transfer tidak menjadi menu 
 - Semua data bisnis dibatasi `business_id` dan izin outlet.
 - Database utama selalu menjadi sumber kebenaran; POS tidak pernah menulis langsung ke database replica.
 - Saat switch replica outlet aktif, commit transaksi utama membuat outbox event yang dikirim worker ke database replica.
-- Replica mempertahankan nominal transaksi asli, tetapi tidak menerima identitas pelanggan, HPP, laba, kredensial, atau catatan internal.
+- Replica mempertahankan nominal transaksi asli, tetapi tidak menerima identitas pelanggan, harga modal, laba, kredensial, atau catatan internal.
 - Laporan resmi dan pajak hanya membaca database utama; replica selalu berlabel non-authoritative.
 
 Detail: [`architecture/data-model.md`](architecture/data-model.md).
 
-## 5. Peran dan approval
+## 5. Peran dan persetujuan
 
 | Tindakan | Pemilik | Manajer | Kasir | Gudang |
 |---|---:|---:|---:|---:|
@@ -100,8 +111,8 @@ Hak akses disimpan sebagai kemampuan dan ditugaskan per outlet. Nama peran hanya
 
 | Area | Rekomendasi | Status |
 |---|---|---|
-| Backend/API | Laravel modular monolith | Diputuskan, implementasi M1 berjalan |
-| Backoffice | Inertia + Vue + TypeScript | Diputuskan, scaffold tersedia |
+| Backend/API | Laravel modular monolith | Diputuskan, fondasi M1 tersedia |
+| Backoffice | Inertia + Vue + TypeScript | Diputuskan, katalog dan outlet tersedia |
 | POS mobile | Flutter, Android-first | Wajib validasi hardware |
 | Database server | PostgreSQL | Diputuskan |
 | Database lokal POS | SQLite | Diputuskan, belum diimplementasikan |
@@ -132,9 +143,9 @@ Detail: [`conventions/git-workflow.md`](conventions/git-workflow.md) dan [`conve
 | Teknis dan keamanan | [`architecture/technical-foundation.md`](architecture/technical-foundation.md) |
 | Delivery | [`delivery/roadmap.md`](delivery/roadmap.md) |
 | Benchmark | [`references/pos-benchmark.md`](references/pos-benchmark.md) |
-| Audit menu Vireo | [`references/vireo-menu-audit.md`](references/vireo-menu-audit.md) |
+| Audit Vireo dan master data Binyo | [`references/vireo-menu-audit.md`](references/vireo-menu-audit.md) |
 | Matriks fitur Vireo | [`references/vireo-feature-matrix.md`](references/vireo-feature-matrix.md) |
-| Validasi HPP Vireo | [`references/vireo-hpp-validation.md`](references/vireo-hpp-validation.md) |
+| Validasi harga modal dan stok Vireo | [`references/vireo-hpp-validation.md`](references/vireo-hpp-validation.md) |
 | Convention | [`conventions/README.md`](conventions/README.md) |
 
 ## 9. Keputusan terbuka

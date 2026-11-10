@@ -2,13 +2,13 @@
 title: "Matriks Fitur VireoPOS"
 subtitle: "Inventaris 1:1 menu, halaman, field, aksi, permission, dan pemetaan Binyo"
 author: "Binyo POS"
-date: "2026-10-28"
+date: "2026-11-10"
 status: "Draft"
 ---
 
 # Matriks Fitur VireoPOS
 
-Tanggal observasi: 2026-10-27
+Tanggal observasi terbaru: 10 November 2026
 
 Referensi: <https://eretail.vireopos.com/#/vireodashboard.crux>
 
@@ -67,7 +67,7 @@ Binyo menambahkan shift belum ditutup, pembayaran belum direkonsiliasi, dan pera
 
 | ID | Menu dan route | Field atau struktur utama | Aksi/permission Vireo | Binyo | Keputusan | Audit |
 |---|---|---|---|---|---|---|
-| VIR-MST-01 | Kategori `/category.crux` | Nama, urutan tampil, indikator bahan baku | Tambah, impor, ekspor, ubah, hapus | Produk > Katalog > Kategori | Keep | Verified UI |
+| VIR-MST-01 | Kategori `/category.crux` | Nama, urutan tampil | Tambah, impor, ekspor, ubah, hapus | Produk > Katalog > Kategori | Keep | Verified UI 2026-11-10 |
 | VIR-MST-02 | Grup Produk `/vireoProductGroup.crux` | Nama, default | Tambah, impor, ekspor, ubah, hapus | Tag/filter produk | Merge | Verified UI |
 | VIR-MST-03 | Merek `/vireoBrand.crux` | Nama, default | Tambah, impor, ekspor, ubah, hapus | Field produk | Merge | Verified UI |
 | VIR-MST-04 | Atribut `/vireoattribute.crux` | Nama atribut dan daftar pilihan | Tambah, impor, ekspor, ubah, hapus | Produk > Varian | Merge | Verified UI |
@@ -77,6 +77,8 @@ Binyo menambahkan shift belum ditutup, pembayaran belum direkonsiliasi, dan pera
 | VIR-MST-08 | Produk `/invproduct.crux` | Produk induk, nama, kategori, grup, merek, kode, satuan, outlet, stok, HPP, harga, pajak, resep, modifier | Tambah, varian, impor, ekspor, ubah, hapus, hitung ulang HPP | Produk > Katalog | Keep | Verified UI; hitung ulang Needs sandbox |
 | VIR-MST-09 | Gerai `/vireooutlet.crux` | Profil, alamat, telepon, kredit, PB1, PPN, tipe pajak, service charge, platform fee, pembayaran, web order, dapur; tab fasilitas/channel/deposito | Tambah, ubah, hapus | Operasional > Outlet | Simplify | Verified UI |
 | VIR-MST-10 | Promo `/vireopromo.crux` | Nama, jenis, minimum belanja, member/poin, periode, jadwal, outlet, channel | Tambah promo, grup produk, ubah, hapus | Produk > Promo | Simplify | Verified UI |
+
+Kategori `Bahan Baku` yang terlihat merupakan nama kategori tenant. Halaman yang diperiksa tidak memiliki field khusus penanda bahan baku. Binyo membedakan perilaku melalui jenis produk, bukan nama kategori.
 
 ### 4.2 Pelanggan, pembayaran, dan harga
 

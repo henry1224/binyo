@@ -48,7 +48,7 @@ Menerima barang, menghitung stok, melakukan transfer, dan mencatat penyesuaian d
 - Split bill per item atau sebagian jumlah item dengan metode pembayaran berbeda.
 - Shift kasir, pergerakan kas, void, refund, dan audit tindakan sensitif.
 - Stok masuk, keluar, penjualan, opname, penyesuaian, dan peringatan stok rendah.
-- Pemasok, purchase order sederhana, dan penerimaan barang.
+- Pemasok, pembelian sederhana, dan penerimaan barang.
 - Dashboard dan laporan operasional utama.
 - Operasi offline sementara dengan sinkronisasi aman.
 - Replica operasional sanitasi per outlet untuk kebutuhan demo, analytics terbatas, atau integrasi non-authoritative.
@@ -82,13 +82,20 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 ### Katalog
 
 - Produk memiliki nama, kategori, gambar opsional, pajak, status, dan urutan tampil.
-- Varian/SKU adalah unit yang dijual dan dapat memiliki barcode, harga, biaya, serta stok.
+- Kategori hanya untuk pengelompokan dan tidak menentukan perilaku stok atau penjualan.
+- Jenis produk minimum adalah `standard`, `recipe`, `ingredient`, dan `service`.
+- Varian/SKU adalah pilihan produk yang dapat memiliki barcode, harga jual, satuan dasar, dan aturan stok.
 - Produk tanpa pilihan tetap memiliki satu varian default agar model transaksi konsisten.
 - Modifier dapat wajib atau opsional dan dapat menambah harga.
 - Produk dapat dibatasi untuk outlet tertentu.
-- Produk resep dapat mengurangi beberapa bahan baku ketika terjual.
-- SKU memiliki satu base unit dan dapat memiliki satuan beli dengan faktor konversi tersimpan.
-- HPP saat transaksi selesai disimpan sebagai snapshot dan tidak berubah karena penerimaan berikutnya.
+- Produk `standard` mengurangi stoknya sendiri bila pelacakan stok aktif.
+- Produk `recipe` mengurangi komponen resep ketika terjual.
+- Produk `ingredient` tidak tampil di POS dan wajib dilacak stoknya.
+- Produk `service` tidak mengubah stok.
+- Kemasan memakai jenis `ingredient` dan kategori `Kemasan`; tidak memerlukan master terpisah.
+- SKU memiliki satu satuan dasar dan dapat memiliki satuan beli dengan faktor konversi tersimpan.
+- Harga modal saat transaksi selesai disimpan sebagai snapshot dan tidak berubah karena penerimaan berikutnya.
+- Harga modal awal hanya dapat dicatat bersama jumlah stok awal dan outlet.
 
 ### Penjualan
 
@@ -100,6 +107,8 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 - Pembayaran sebagian mengubah transaksi menjadi `partially_paid`; transaksi selesai hanya setelah seluruh total teralokasi.
 - Split bill memilih item atau sebagian jumlah item tanpa menggandakan baris dan tanpa membuat pembatalan transaksi.
 - Kitchen ticket opsional mencetak item yang diarahkan ke bar atau dapur; kitchen display tetap fase berikutnya.
+- Transaksi selesai mengurangi stok produk standar atau komponen resep dalam proses yang sama.
+- Pengiriman ulang permintaan tidak boleh membuat penjualan atau pergerakan stok ganda.
 
 ### Pembayaran
 
@@ -131,18 +140,22 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 
 - Semua perubahan stok menghasilkan pergerakan dengan sumber dan pelaku.
 - Stok tidak boleh diubah langsung tanpa histori.
+- Saldo stok merupakan hasil pergerakan per pilihan produk dan outlet.
+- Stok awal wajib mencatat jumlah, satuan dasar, outlet, dan harga modal awal.
 - Koreksi stok membutuhkan alasan.
 - Setiap outlet memiliki pengaturan larangan stok minus yang aktif secara default.
-- Jika larangan dinonaktifkan, penjualan tetap berjalan, HPP memakai biaya terakhir, dan saldo minus masuk daftar rekonsiliasi.
+- Jika larangan dinonaktifkan, penjualan tetap berjalan, harga modal memakai biaya terakhir, dan saldo minus masuk daftar rekonsiliasi.
 - Stok opname membandingkan jumlah sistem dan fisik sebelum menghasilkan penyesuaian.
+- Refund produk resep tidak otomatis mengembalikan bahan yang sudah dipakai.
+- Refund produk standar menambah stok hanya bila barang fisik kembali dan layak dijual.
 
 ### Pembelian
 
-- Purchase order memiliki status draft, dipesan, diterima sebagian, selesai, atau dibatalkan.
-- Izin posting menentukan siapa yang boleh mengubah draft menjadi pesanan; approval berantai bukan MVP.
+- Pembelian memiliki status draft, dipesan, diterima sebagian, selesai, atau dibatalkan.
+- Izin pencatatan menentukan siapa yang boleh mengubah draft menjadi pesanan; persetujuan berantai bukan MVP.
 - Penerimaan dapat dilakukan sebagian.
-- Satuan beli dikonversi ke base unit memakai faktor yang disimpan sebagai snapshot.
-- Biaya pembelian per base unit dan rata-rata bergerak dihitung saat penerimaan diposting.
+- Satuan beli dikonversi ke satuan dasar memakai faktor yang disalin ke baris penerimaan.
+- Harga pembelian per satuan dasar dan harga modal rata-rata bergerak dihitung saat penerimaan dicatat.
 - Pembatalan penerimaan tidak menghapus histori; sistem membuat pembalik yang terlacak.
 
 ### Pelanggan
@@ -169,7 +182,7 @@ Fitur ditambahkan setelah kebutuhan nyata muncul pada pilot.
 - Saat `OFF`, transaksi hanya disimpan pada database utama.
 - Saat `ON`, transaksi tetap disimpan pada database utama lalu dikirim secara asynchronous ke database replica melalui outbox.
 - Database replica mempertahankan nilai penjualan, diskon, pajak, service charge, pembayaran, void, dan refund sesuai sumber.
-- Database replica tidak menerima identitas pelanggan, HPP, laba, kredensial, PIN, token, atau catatan internal.
+- Database replica tidak menerima identitas pelanggan, harga modal, laba, kredensial, PIN, token, atau catatan internal.
 - Switch `OFF` tidak menghapus data lama dan tidak membatalkan event yang sudah antre.
 - Transaksi yang pernah masuk replica tetap menerima event void, refund, dan reversal walaupun switch kemudian `OFF`.
 - Transaksi baru ketika switch `OFF` tidak masuk replica; backfill historis bukan MVP.

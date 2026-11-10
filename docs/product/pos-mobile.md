@@ -164,7 +164,7 @@ kas awal + penjualan tunai + kas masuk manual
 
 Kas masuk/keluar manual meminta permission `cash.movement.create`. Jika pengguna tidak memiliki `cash.movement.approve`, aplikasi meminta PIN pemilik atau manajer. Record yang sudah dibuat tidak dapat diedit atau dihapus; kesalahan dibalik dengan record baru, alasan, dan penyetuju.
 
-Pergerakan ini mengatur cash drawer, bukan jurnal akuntansi, HPP, atau pengakuan biaya. General ledger tetap di luar MVP.
+Pergerakan ini mengatur laci kas, bukan jurnal akuntansi, harga modal, atau pengakuan biaya. Buku besar tetap di luar MVP.
 
 ### Dua shift dalam satu hari
 

@@ -64,7 +64,7 @@ Observasi dilakukan pada sesi yang disediakan pengguna. Dokumen hanya mencatat s
 - Akunting penuh diganti ekspor sampai ada kebutuhan nyata.
 - Loyalty, komisi, waralaba, broadcast, dan integrasi delivery ditunda.
 
-Audit setiap menu dan HPP: [`vireo-menu-audit.md`](vireo-menu-audit.md).
+Audit setiap menu dan harga modal: [`vireo-menu-audit.md`](vireo-menu-audit.md).
 
 ## 2. Loyverse
 
