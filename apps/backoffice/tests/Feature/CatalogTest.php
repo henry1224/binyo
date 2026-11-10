@@ -10,6 +10,7 @@ use App\Models\Permission;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Role;
+use App\Models\Unit;
 use App\Models\User;
 use App\Models\UserOutletRole;
 use Illuminate\Database\QueryException;
@@ -156,6 +157,7 @@ class CatalogTest extends TestCase
             'category_id' => $category->id,
             'name' => ' Cafe Latte ',
             'description' => ' Susu dan espresso ',
+            'product_type' => 'standard',
             'display_order' => 10,
             'status' => 'active',
             'variants' => [
@@ -195,6 +197,7 @@ class CatalogTest extends TestCase
                 'category_id' => $category->id,
                 'name' => 'Latte Baru',
                 'description' => null,
+                'product_type' => 'standard',
                 'display_order' => 15,
                 'status' => 'inactive',
                 'variants' => [
@@ -242,6 +245,7 @@ class CatalogTest extends TestCase
                 'category_id' => $category->id,
                 'name' => 'Produk Duplikat',
                 'description' => null,
+                'product_type' => 'standard',
                 'display_order' => 0,
                 'status' => 'active',
                 'variants' => [$this->variantPayload('Reguler', 'SKU-SAMA', 10000, [$outlet])],
@@ -272,6 +276,7 @@ class CatalogTest extends TestCase
                 'category_id' => $category->id,
                 'name' => 'Diubah Paksa',
                 'description' => null,
+                'product_type' => 'standard',
                 'display_order' => 0,
                 'status' => 'active',
                 'variants' => [$this->variantPayload('Baru', 'BARU', 10000, [$outlet])],
@@ -283,6 +288,7 @@ class CatalogTest extends TestCase
                 'category_id' => $category->id,
                 'name' => 'Harga Silang',
                 'description' => null,
+                'product_type' => 'standard',
                 'display_order' => 0,
                 'status' => 'active',
                 'variants' => [$this->variantPayload('Reguler', 'SILANG', 10000, [$otherOutlet])],
@@ -293,6 +299,128 @@ class CatalogTest extends TestCase
             'id' => $foreignProduct->id,
             'name' => 'Produk Rahasia',
         ]);
+    }
+
+    public function test_ingredient_forces_stock_rules_and_saves_purchase_unit_conversion(): void
+    {
+        $business = Business::factory()->create();
+        $outlet = $this->createOutlet($business, 'KU', 'Kedai Utama');
+        $category = $this->createCategory($business, 'Bahan Baku');
+        $user = $this->createUserWithCatalogPermission($business, $outlet);
+        $milliliter = Unit::query()->where('code', 'ml')->firstOrFail();
+        $bottle = Unit::query()->where('code', 'botol')->firstOrFail();
+        $variant = [
+            ...$this->variantPayload('Reguler', 'DRIPP-PALM', 10000, [$outlet]),
+            'base_unit_id' => $milliliter->id,
+            'track_stock' => false,
+            'purchase_units' => [[
+                'unit_id' => $bottle->id,
+                'conversion_factor_to_base' => 750,
+            ]],
+        ];
+
+        $this->actingAs($user)
+            ->post(route('catalog.products.store'), [
+                'category_id' => $category->id,
+                'name' => 'Dripp Palm Sugar',
+                'description' => null,
+                'product_type' => 'ingredient',
+                'display_order' => 0,
+                'status' => 'active',
+                'variants' => [$variant],
+            ])
+            ->assertRedirect(route('catalog.index'));
+
+        $product = Product::query()->where('name', 'Dripp Palm Sugar')->firstOrFail();
+        $savedVariant = $product->variants()->firstOrFail();
+
+        $this->assertSame('ingredient', $product->product_type);
+        $this->assertTrue($savedVariant->track_stock);
+        $this->assertSame('0.00', $savedVariant->sell_price);
+        $this->assertSame($milliliter->id, $savedVariant->base_unit_id);
+        $this->assertDatabaseHas('product_units', [
+            'product_variant_id' => $savedVariant->id,
+            'unit_id' => $bottle->id,
+            'conversion_factor_to_base' => 750,
+        ]);
+        $this->assertDatabaseHas('outlet_products', [
+            'product_variant_id' => $savedVariant->id,
+            'outlet_id' => $outlet->id,
+            'is_available' => false,
+            'price_override' => null,
+        ]);
+    }
+
+    public function test_recipe_and_service_cannot_keep_stock_settings(): void
+    {
+        $business = Business::factory()->create();
+        $outlet = $this->createOutlet($business, 'KU', 'Kedai Utama');
+        $category = $this->createCategory($business, 'Menu');
+        $user = $this->createUserWithCatalogPermission($business, $outlet);
+        $bottle = Unit::query()->where('code', 'botol')->firstOrFail();
+
+        foreach (['recipe', 'service'] as $type) {
+            $variant = [
+                ...$this->variantPayload('Reguler', mb_strtoupper($type), 20000, [$outlet]),
+                'track_stock' => true,
+                'purchase_units' => [[
+                    'unit_id' => $bottle->id,
+                    'conversion_factor_to_base' => 1,
+                ]],
+            ];
+
+            $this->actingAs($user)
+                ->post(route('catalog.products.store'), [
+                    'category_id' => $category->id,
+                    'name' => "Produk {$type}",
+                    'description' => null,
+                    'product_type' => $type,
+                    'display_order' => 0,
+                    'status' => 'active',
+                    'variants' => [$variant],
+                ])
+                ->assertRedirect(route('catalog.index'));
+        }
+
+        $variants = ProductVariant::query()
+            ->whereIn('sku', ['RECIPE', 'SERVICE'])
+            ->get();
+
+        $this->assertCount(2, $variants);
+        $this->assertTrue($variants->every(fn (ProductVariant $variant): bool => ! $variant->track_stock));
+        $this->assertDatabaseCount('product_units', 0);
+    }
+
+    public function test_purchase_unit_must_be_unique_and_different_from_base_unit(): void
+    {
+        $business = Business::factory()->create();
+        $outlet = $this->createOutlet($business, 'KU', 'Kedai Utama');
+        $category = $this->createCategory($business, 'Bahan Baku');
+        $user = $this->createUserWithCatalogPermission($business, $outlet);
+        $milliliter = Unit::query()->where('code', 'ml')->firstOrFail();
+        $variant = [
+            ...$this->variantPayload('Reguler', 'SIRUP', 0, [$outlet]),
+            'base_unit_id' => $milliliter->id,
+            'track_stock' => true,
+            'purchase_units' => [
+                ['unit_id' => $milliliter->id, 'conversion_factor_to_base' => 1],
+                ['unit_id' => $milliliter->id, 'conversion_factor_to_base' => 1000],
+            ],
+        ];
+
+        $this->actingAs($user)
+            ->from(route('catalog.index'))
+            ->post(route('catalog.products.store'), [
+                'category_id' => $category->id,
+                'name' => 'Sirup',
+                'description' => null,
+                'product_type' => 'ingredient',
+                'display_order' => 0,
+                'status' => 'active',
+                'variants' => [$variant],
+            ])
+            ->assertRedirect(route('catalog.index'))
+            ->assertSessionHasErrors('variants.0.purchase_units');
     }
 
     public function test_database_rejects_product_category_from_another_business(): void
@@ -355,6 +483,7 @@ class CatalogTest extends TestCase
             'business_id' => $business->id,
             'product_id' => $product->id,
             'name' => 'Reguler',
+            'base_unit_id' => $this->unitId('pcs'),
             'sku' => $sku,
             'sell_price' => 20000,
             'track_stock' => false,
@@ -411,15 +540,21 @@ class CatalogTest extends TestCase
             'name' => $name,
             'sku' => $sku,
             'barcode' => null,
+            'base_unit_id' => $this->unitId('pcs'),
             'sell_price' => $price,
-            'default_purchase_cost' => null,
             'track_stock' => false,
             'status' => 'active',
+            'purchase_units' => [],
             'outlets' => collect($outlets)->map(fn (Outlet $outlet, int $index): array => [
                 'outlet_id' => $outlet->id,
                 'is_available' => true,
                 'price_override' => $overrides[$index] ?? null,
             ])->all(),
         ];
+    }
+
+    private function unitId(string $code): int
+    {
+        return Unit::query()->where('code', $code)->valueOrFail('id');
     }
 }

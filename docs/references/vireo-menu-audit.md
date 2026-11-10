@@ -143,20 +143,22 @@ Aturan tambahan:
 | Area | Status saat ini | Batas yang ditemukan |
 |---|---|---|
 | Kategori | Tersedia dan dapat dibuat/diubah | Hanya nama, urutan tampil, dan status; tidak ada hapus permanen |
-| Produk dan pilihan | Tersedia dan dapat dibuat/diubah | Semua produk baru dipaksa menjadi `standard` |
-| Kode, barcode, harga jual | Tersedia | Harga jual wajib untuk semua jenis karena jenis produk belum dapat dipilih |
+| Produk dan pilihan | Tersedia dan dapat dibuat/diubah | Jenis produk dipilih pada produk; satuan dasar dan satuan beli diatur per pilihan |
+| Kode, barcode, harga jual | Tersedia | Harga jual hanya berlaku untuk `standard`, `recipe`, dan `service` |
 | Harga jual dan ketersediaan outlet | Tersedia | Berlaku untuk produk jual |
-| Harga modal manual | Tersedia pada form pilihan produk | Belum terkait jumlah stok, penerimaan, atau outlet sehingga belum menjadi harga modal berjalan |
-| `product_type` | Kolom database tersedia | Tidak dikirim ke daftar/form dan selalu diisi `standard` oleh controller |
-| `track_stock` | Kolom database dan payload tersedia | Tidak ada kontrol yang terlihat pada UI katalog; nilai baru tetap `false` |
+| Harga modal awal | Tersedia pada alur stok awal | Wajib dicatat bersama jumlah, satuan dasar, dan outlet; tidak lagi diubah dari form produk |
+| `product_type` | Aktif pada validasi, daftar, dan form | Produk lama tetap `standard`; kategori tidak mengubah jenis secara otomatis |
+| `track_stock` | Aktif dengan aturan per jenis produk | Wajib untuk `ingredient`, opsional untuk `standard`, nonaktif untuk `recipe` dan `service` |
+| Satuan dan konversi beli | Tersedia | Preset global; belum dipakai penerimaan karena alur pembelian belum tersedia |
 | Outlet | Tersedia dan dapat dibuat/diubah | Sudah memiliki aturan stok minus, tetapi belum ada ledger stok |
 | Staff dan perangkat | Tampil sebagai daftar | Belum ada route pengelolaan pada halaman operasional saat ini |
 | Peran, izin, laci kas | Tersedia pada database/seeder | Belum menjadi master yang dikelola lengkap melalui UI |
-| Satuan, pemasok, resep, modifier | Belum tersedia | Belum ada tabel, route, controller, atau UI operasional |
-| Pembelian, penerimaan, saldo, pergerakan stok | Belum tersedia | Penanda stok pada katalog belum menghasilkan jumlah atau histori stok |
+| Pemasok, resep, modifier | Belum tersedia | Belum ada tabel, route, controller, atau UI operasional |
+| Saldo dan pergerakan stok | Fondasi tersedia | Stok awal menghasilkan ledger, saldo per outlet, posisi stok, dan kartu stok minimum |
+| Pembelian dan penerimaan | Belum tersedia | Belum dapat menambah stok atau menghitung harga modal rata-rata dari pemasok |
 | Penjualan dan pemotongan bahan | Belum tersedia | Belum ada transaksi yang dapat mengurangi produk atau komponen resep |
 
-Route mutasi yang tersedia saat audit hanya kategori, produk, dan outlet. Data lain tidak boleh dianggap sudah berjalan hanya karena rancangan tabelnya terdapat pada dokumentasi.
+Route mutasi yang tersedia saat ini hanya kategori, produk, dan outlet. Satuan memakai preset global tetap, bukan CRUD tenant. Data lain tidak boleh dianggap sudah berjalan hanya karena rancangan tabelnya terdapat pada dokumentasi.
 
 ### 3.5 Kolom dan struktur yang dipertahankan
 
@@ -171,7 +173,9 @@ Route mutasi yang tersedia saat audit hanya kategori, produk, dan outlet. Data l
 | `outlet_products.price_override` | Pertahankan | Harga jual dapat berbeda per outlet tanpa grup harga |
 | Status aktif/nonaktif | Pertahankan | Menghentikan penggunaan tanpa menghapus histori |
 
-### 3.6 Kolom dan struktur yang perlu ditambah
+### 3.6 Kolom dan struktur target
+
+`product_variants.base_unit_id`, `units`, dan `product_units` sudah tersedia. Struktur lain pada tabel berikut tetap menjadi pekerjaan tahap selanjutnya.
 
 | Struktur | Isi minimum | Alasan |
 |---|---|---|
@@ -279,12 +283,10 @@ Stok sumber berkurang saat `Dikirim`. Stok tujuan bertambah saat `Diterima`. Sel
 
 ### Gap register Binyo
 
+Gap jenis produk, satuan, stok awal, ledger, saldo, posisi stok, dan kartu stok minimum sudah ditutup pada fondasi M2. Tabel berikut memuat gap yang masih terbuka.
+
 | Prioritas | Gap | Dampak bila belum ada | Penutup gap |
 |---|---|---|---|
-| P0 | Jenis produk belum dapat dipilih | Bahan dan menu jual tidak dapat dibedakan dengan aman | Aktifkan `product_type` dengan empat pilihan dan validasi kombinasi |
-| P0 | Satuan dasar dan konversi belum ada | Pembelian botol tidak dapat menjadi stok `ml`; resep tidak presisi | Tambah `units`, `base_unit_id`, dan `product_units` |
-| P0 | Stok awal belum ada | Harga modal manual tidak menghasilkan jumlah atau nilai stok | Catat stok awal per outlet |
-| P0 | Ledger dan saldo stok belum ada | Tidak ada sumber kebenaran, kartu stok, atau kontrol stok minus | Tambah `stock_movements` dan `inventory_balances` |
 | P0 | Pemasok, pembelian, penerimaan belum ada | Stok masuk dan harga modal tidak dapat diaudit | Buat pemasok, pembelian, dan penerimaan sebagian |
 | P0 | Resep belum ada | Penjualan menu tidak dapat mengurangi bahan | Tambah komponen resep dan validasi satuan/siklus |
 | P0 | Penjualan belum ada | Belum ada titik pemotongan stok atau snapshot harga modal | Buat transaksi selesai yang mencatat stok secara idempoten |

@@ -12,6 +12,7 @@ use App\Models\Permission;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\Role;
+use App\Models\Unit;
 use App\Models\User;
 use App\Models\UserOutletRole;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -160,6 +161,7 @@ class DatabaseSeeder extends Seeder
 
             return [$data['name'] => $category];
         });
+        $pieceUnitId = Unit::query()->where('code', 'pcs')->value('id');
 
         foreach ([
             ['category' => 'Kopi', 'name' => 'Cafe Latte', 'sku' => 'LATTE', 'price' => 28000],
@@ -180,6 +182,7 @@ class DatabaseSeeder extends Seeder
                 [
                     'product_id' => $product->id,
                     'name' => 'Reguler',
+                    'base_unit_id' => $pieceUnitId,
                     'sell_price' => $data['price'],
                     'track_stock' => false,
                     'is_default' => true,

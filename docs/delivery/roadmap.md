@@ -21,19 +21,19 @@ Status checkbox:
 ### Sudah tersedia
 
 - Autentikasi internal, profil, keamanan akun, bisnis, outlet, dan seed superadmin.
-- Kategori, produk, pilihan produk, kode produk, barcode, harga jual, status, serta harga/ketersediaan per outlet.
+- Kategori, jenis produk, pilihan produk, satuan dasar, konversi satuan beli, kode produk, barcode, harga jual, status, serta harga/ketersediaan per outlet.
+- Stok awal, ledger, saldo per outlet, posisi stok, dan kartu stok minimum.
 - Pencarian, filter, pagination, tema terang/gelap/mengikuti sistem, dan pola panel kanan yang konsisten.
 - Daftar outlet, staf, dan perangkat; mutasi melalui UI baru tersedia untuk outlet.
 - Quality gate aplikasi, test katalog, dan build produksi.
 
 ### Belum tersedia
 
-- Pemilihan jenis produk dan kontrol pelacakan stok pada UI.
-- Satuan dasar, konversi satuan beli, stok awal, ledger, dan saldo stok.
+- Pengurangan stok, pembalikan, rekonsiliasi saldo, dan kontrol stok minus.
 - Pemasok, pembelian, penerimaan, resep, dan harga modal rata-rata.
 - Penjualan, pembayaran, shift, pengurangan stok, refund, dan laporan operasional.
 
-Implementasi berikutnya dimulai dari M2. POS tidak dibangun lebih dahulu karena penjualan harus memiliki aturan stok dan harga modal yang sudah stabil.
+Implementasi berikutnya menutup sisa M2, lalu masuk ke pembelian, penerimaan, dan resep pada M3. POS tidak dibangun lebih dahulu karena penjualan harus memiliki aturan stok dan harga modal yang sudah stabil.
 
 ## M0 - Persetujuan produk
 
@@ -66,15 +66,15 @@ Gerbang M1: pemilik dapat membuat outlet dan katalog dasar tanpa mengubah databa
 
 ## M2 - Fondasi produk dan stok
 
-- [ ] Aktifkan jenis produk `standard`, `recipe`, `ingredient`, dan `service` pada validasi serta UI.
-- [ ] Terapkan aturan tampilan POS, pembelian, dan pelacakan stok untuk setiap jenis produk.
-- [ ] Tambah master satuan, satuan dasar pilihan produk, serta konversi satuan beli.
-- [ ] Pindahkan harga modal manual dari produk ke alur stok awal.
-- [ ] Tambah stok awal per pilihan produk dan outlet.
-- [ ] Tambah `stock_movements` sebagai sumber kebenaran dan `inventory_balances` sebagai saldo cepat.
-- [ ] Tampilkan posisi stok dan kartu stok minimum.
-- [ ] Terapkan larangan stok minus per outlet dan transaksi stok yang aman dari duplikasi.
-- [ ] Tambah test kombinasi jenis produk, konversi, stok awal, dan saldo.
+- [x] Aktifkan jenis produk `standard`, `recipe`, `ingredient`, dan `service` pada validasi serta UI.
+- [x] Terapkan aturan penjualan, pembelian, dan pelacakan stok untuk setiap jenis produk.
+- [x] Tambah master satuan, satuan dasar pilihan produk, serta konversi satuan beli.
+- [x] Pindahkan harga modal manual dari produk ke alur stok awal.
+- [x] Tambah stok awal per pilihan produk dan outlet.
+- [x] Tambah `stock_movements` sebagai sumber kebenaran dan `inventory_balances` sebagai saldo cepat.
+- [x] Tampilkan posisi stok dan kartu stok minimum.
+- [-] Terapkan larangan stok minus per outlet dan transaksi stok yang aman dari duplikasi; stok awal aman dari kirim ulang, pengurangan stok belum tersedia.
+- [x] Tambah test kombinasi jenis produk, konversi, stok awal, dan saldo.
 
 Gerbang M2:
 

@@ -9,6 +9,7 @@ use App\Models\Outlet;
 use App\Models\OutletProduct;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\Unit;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,6 +46,7 @@ class CatalogController extends Controller
                 'category_id',
                 'name',
                 'description',
+                'product_type',
                 'status',
                 'display_order',
                 'updated_at',
@@ -90,13 +92,16 @@ class CatalogController extends Controller
                             'sku',
                             'barcode',
                             'name',
+                            'base_unit_id',
                             'sell_price',
-                            'default_purchase_cost',
                             'track_stock',
                             'is_default',
                             'status',
                         ])
-                        ->with('outletProducts:id,product_variant_id,outlet_id,is_available,price_override')
+                        ->with([
+                            'outletProducts:id,product_variant_id,outlet_id,is_available,price_override',
+                            'productUnits:id,product_variant_id,unit_id,conversion_factor_to_base',
+                        ])
                         ->orderByDesc('is_default')
                         ->orderBy('id'),
                 ])
@@ -116,6 +121,10 @@ class CatalogController extends Controller
                 ->where('business_id', $businessId)
                 ->orderBy('name')
                 ->get(['id', 'code', 'name']),
+            'units' => fn () => Unit::query()
+                ->where('status', 'active')
+                ->orderBy('id')
+                ->get(['id', 'code', 'name', 'dimension']),
             'summary' => fn () => [
                 'categories' => Category::query()->where('business_id', $businessId)->count(),
                 'products' => Product::query()->where('business_id', $businessId)->count(),
@@ -188,7 +197,7 @@ class CatalogController extends Controller
                 'category_id' => $data['category_id'],
                 'name' => $data['name'],
                 'description' => $data['description'],
-                'product_type' => 'standard',
+                'product_type' => $data['product_type'],
                 'status' => $data['status'],
                 'display_order' => $data['display_order'],
             ]);
@@ -199,14 +208,15 @@ class CatalogController extends Controller
                     'sku' => $variantData['sku'],
                     'barcode' => $variantData['barcode'],
                     'name' => $variantData['name'],
+                    'base_unit_id' => $variantData['base_unit_id'],
                     'sell_price' => $variantData['sell_price'],
-                    'default_purchase_cost' => $variantData['default_purchase_cost'],
                     'track_stock' => $variantData['track_stock'],
                     'is_default' => $index === 0,
                     'status' => $variantData['status'],
                 ]);
 
                 $this->syncOutletPrices($variant, $variantData['outlets'], $user->business_id);
+                $this->syncProductUnits($variant, $variantData['purchase_units']);
             }
 
             return $product;
@@ -236,6 +246,7 @@ class CatalogController extends Controller
                 'category_id' => $data['category_id'],
                 'name' => $data['name'],
                 'description' => $data['description'],
+                'product_type' => $data['product_type'],
                 'status' => $data['status'],
                 'display_order' => $data['display_order'],
             ]);
@@ -259,14 +270,15 @@ class CatalogController extends Controller
                     'sku' => $variantData['sku'],
                     'barcode' => $variantData['barcode'],
                     'name' => $variantData['name'],
+                    'base_unit_id' => $variantData['base_unit_id'],
                     'sell_price' => $variantData['sell_price'],
-                    'default_purchase_cost' => $variantData['default_purchase_cost'],
                     'track_stock' => $variantData['track_stock'],
                     'is_default' => $index === 0,
                     'status' => $variantData['status'],
                 ])->save();
 
                 $this->syncOutletPrices($variant, $variantData['outlets'], $user->business_id);
+                $this->syncProductUnits($variant, $variantData['purchase_units']);
             }
         });
 
@@ -294,5 +306,12 @@ class CatalogController extends Controller
                 ],
             );
         }
+    }
+
+    /** @param array<int, array{unit_id: int, conversion_factor_to_base: int|float|string}> $units */
+    private function syncProductUnits(ProductVariant $variant, array $units): void
+    {
+        $variant->productUnits()->delete();
+        $variant->productUnits()->createMany($units);
     }
 }

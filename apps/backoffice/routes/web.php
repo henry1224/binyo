@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CatalogController;
+use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\OperationalController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,6 +20,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('catalog/products/{product}', [CatalogController::class, 'updateProduct'])
         ->whereNumber('product')
         ->name('catalog.products.update');
+    Route::get('inventory', InventoryController::class)->name('inventory.index');
+    Route::post('inventory/opening-stock', [InventoryController::class, 'storeOpeningStock'])
+        ->name('inventory.opening-stock.store');
     Route::get('operational', OperationalController::class)->name('operational.index');
     Route::post('operational/outlets', [OperationalController::class, 'store'])
         ->name('operational.outlets.store');

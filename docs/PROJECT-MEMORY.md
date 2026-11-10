@@ -29,9 +29,9 @@ flowchart LR
 
 ### Status implementasi
 
-- `Done`: autentikasi, profil, outlet, kategori, produk, pilihan produk, harga/ketersediaan outlet, pencarian, filter, pagination, tema, seed superadmin, dan quality gate.
+- `Done`: autentikasi, profil, outlet, kategori, jenis produk, pilihan produk, satuan dasar, konversi satuan beli, stok awal, ledger dan saldo stok dasar, posisi stok, kartu stok minimum, harga/ketersediaan outlet, pencarian, filter, pagination, tema, seed superadmin, dan quality gate.
 - `Partial`: daftar staf, peran, perangkat, dan laci kas; mutasi UI baru tersedia untuk outlet.
-- `Next`: M2 fondasi produk dan stok — jenis produk, satuan, konversi, stok awal, pergerakan, dan saldo per outlet.
+- `Next`: selesaikan M2 dengan pengurangan stok, aturan stok minus, rekonsiliasi saldo, dan pembalikan; lalu mulai pemasok serta penerimaan barang M3.
 - `Not started`: pemasok, pembelian, penerimaan, resep, penjualan, pembayaran, shift, laporan, dan offline.
 
 Urutan dan gerbang penerimaan mengikuti [`delivery/roadmap.md`](delivery/roadmap.md). POS tidak dibangun sebelum fondasi stok dan harga modal stabil.
