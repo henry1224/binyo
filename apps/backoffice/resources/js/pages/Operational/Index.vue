@@ -837,20 +837,22 @@ defineOptions({
                     @success="setOutletSheetOpen(false)"
                     v-slot="{ errors, processing }"
                 >
-                    <SheetHeader class="border-b px-5 py-5 text-left">
+                    <SheetHeader
+                        class="border-b bg-[#f8f6ef]/80 px-5 py-5 text-left backdrop-blur dark:bg-[#17201d]/80"
+                    >
                         <SheetTitle>
                             {{
                                 editingOutlet ? 'Ubah outlet' : 'Tambah outlet'
                             }}
                         </SheetTitle>
                         <SheetDescription>
-                            Kode outlet dan profit center memisahkan transaksi,
-                            stok, serta laporan setiap cabang.
+                            Kode outlet dan kode laporan membantu memisahkan
+                            transaksi, stok, serta laporan setiap cabang.
                         </SheetDescription>
                     </SheetHeader>
 
                     <div
-                        class="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-5"
+                        class="min-h-0 flex-1 space-y-5 overflow-y-auto scroll-smooth px-5 py-5"
                     >
                         <div class="grid gap-2">
                             <Label for="outlet-name">Nama outlet</Label>
@@ -885,7 +887,7 @@ defineOptions({
                             </div>
                             <div class="grid gap-2">
                                 <Label for="profit-center-code">
-                                    Profit center
+                                    Kode laporan
                                 </Label>
                                 <Input
                                     id="profit-center-code"
@@ -1016,7 +1018,7 @@ defineOptions({
                     </div>
 
                     <SheetFooter
-                        class="border-t bg-background px-5 py-4 sm:flex-row sm:justify-end"
+                        class="border-t bg-background/90 px-5 py-4 backdrop-blur sm:flex-row sm:justify-end"
                     >
                         <Button
                             type="button"
