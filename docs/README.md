@@ -22,9 +22,9 @@ Binyo adalah sistem POS untuk operasional retail dan F&B ringan. Dokumentasi mem
 - [Fondasi teknis](./architecture/technical-foundation.md) — batas modul, API, sinkronisasi, keamanan, dan operasi.
 - [Roadmap](./delivery/roadmap.md) — milestone dan gerbang penerimaan.
 - [Benchmark POS](./references/pos-benchmark.md) — Vireo, Loyverse, Square, Shopify, Odoo, Toast, dan standar pendukung.
-- [Audit menu Vireo](./references/vireo-menu-audit.md) — pemetaan setiap menu, HPP, dan keputusan Binyo.
+- [Audit Vireo dan master data Binyo](./references/vireo-menu-audit.md) — klasifikasi produk, alur stok, gap, dan keputusan master data.
 - [Matriks fitur Vireo](./references/vireo-feature-matrix.md) — inventaris 1:1 route, field, aksi, permission, dan laporan.
-- [Validasi HPP Vireo](./references/vireo-hpp-validation.md) — bukti, rumus target, skenario sandbox, dan acceptance gate.
+- [Validasi harga modal dan stok Vireo](./references/vireo-hpp-validation.md) — bukti, rumus target, skenario sandbox, dan gerbang penerimaan.
 
 ## Status dokumen
 
@@ -38,9 +38,9 @@ Binyo adalah sistem POS untuk operasional retail dan F&B ringan. Dokumentasi mem
 | Fondasi teknis | Draft | Engineering | Batas sistem, API, keamanan, sinkronisasi, dan operasi |
 | Roadmap | Draft | Produk + Engineering | Urutan pembangunan dan kriteria selesai |
 | Referensi | Draft | Produk | Temuan Vireo dan produk pembanding |
-| Audit menu Vireo | Draft | Produk | Cakupan menu, HPP, penyederhanaan, dan batas observasi |
+| Audit Vireo dan master data | Draft | Produk | Jenis produk, master data, alur stok, gap, dan batas observasi |
 | Matriks fitur Vireo | Draft | Produk + Engineering | Ketertelusuran fitur Vireo ke keputusan Binyo |
-| Validasi HPP Vireo | Draft | Produk + Engineering | Aturan biaya, bukti Vireo, dan skenario validasi |
+| Validasi harga modal dan stok Vireo | Draft | Produk + Engineering | Aturan biaya, bukti Vireo, dan skenario validasi |
 
 ## Keputusan awal
 
@@ -54,7 +54,7 @@ Binyo adalah sistem POS untuk operasional retail dan F&B ringan. Dokumentasi mem
 - Penjualan, pembayaran, dan stok memakai histori; data operasional penting tidak dihapus permanen.
 - Akunting penuh, waralaba, komisi, kampanye WhatsApp, dan marketplace integration bukan MVP.
 
-## Pertanyaan yang harus dijawab sebelum pengembangan
+## Keputusan yang masih terbuka
 
 - [x] Segmen awal: kedai kopi/F&B cafe.
 - [x] Pilot: satu outlet, satu perangkat utama, dan satu perangkat cadangan bila tersedia; sistem mendukung dua atau tiga outlet.
@@ -63,7 +63,7 @@ Binyo adalah sistem POS untuk operasional retail dan F&B ringan. Dokumentasi mem
 - [ ] Tentukan kebutuhan scanner, cash drawer, dan kitchen printer pada outlet pilot; customer display dan kitchen display ditunda.
 - [x] Pembayaran awal: tunai, kartu manual, transfer manual, dan QRIS manual; QRIS dinamis ditunda.
 - [ ] Pajak yang dipakai: PB1, PPN, service charge, atau kombinasi?
-- [x] Stok bahan baku, resep ringan, dan HPP rata-rata bergerak wajib pada rilis pertama.
+- [x] Stok bahan baku, resep ringan, dan harga modal rata-rata bergerak wajib pada rilis pertama.
 - [ ] Apakah data lama perlu diimpor dari Vireo atau spreadsheet?
 - [ ] Integrasi akunting apa yang dibutuhkan: ekspor CSV, Accurate, Jurnal, atau lainnya?
 

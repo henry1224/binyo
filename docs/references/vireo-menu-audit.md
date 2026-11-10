@@ -1,24 +1,35 @@
 ---
-title: "Audit Menu VireoPOS"
-subtitle: "Pemetaan dashboard, master data, transaksi, laporan, HPP, akunting, dan akun"
+title: "Audit VireoPOS dan Master Data Binyo"
+subtitle: "Pemetaan master data, stok, pembelian, penjualan, harga modal, dan keputusan Binyo"
 author: "Binyo POS"
-date: "2026-10-27"
+date: "2026-11-10"
 status: "Draft"
 ---
 
-# Audit Menu VireoPOS
+# Audit VireoPOS dan Master Data Binyo
 
-Tanggal observasi: 2026-10-27
+Tanggal observasi terbaru: 10 November 2026
 
 Referensi: <https://eretail.vireopos.com/#/vireodashboard.crux>
 
 Audit dilakukan pada sesi yang disediakan pengguna. Dokumen ini tidak menyalin identitas akun, outlet, pelanggan, nomor dokumen, atau nilai transaksi nyata.
 
-Inventaris 1:1 terdapat pada [`vireo-feature-matrix.md`](vireo-feature-matrix.md). Rumus dan skenario HPP terdapat pada [`vireo-hpp-validation.md`](vireo-hpp-validation.md).
+Inventaris 1:1 terdapat pada [`vireo-feature-matrix.md`](vireo-feature-matrix.md). Bukti stok, rumus harga modal, dan skenario uji terdapat pada [`vireo-hpp-validation.md`](vireo-hpp-validation.md).
+
+Istilah `HPP` dipakai hanya saat mengutip label Vireo. UI Binyo memakai istilah `harga modal`.
 
 ## 1. Kesimpulan
 
 Vireo memiliki cakupan operasional luas, tetapi banyak pekerjaan dipecah menjadi menu teknis. Binyo mengambil kemampuan intinya lalu menyusun ulang berdasarkan tugas pengguna.
+
+Kesimpulan utama untuk katalog dan stok:
+
+- Kategori hanya untuk pengelompokan, filter, dan tampilan. Kategori tidak menentukan apakah item dijual, dibeli, atau mengurangi stok.
+- Jenis produk menentukan perilaku. Binyo memerlukan `standard`, `recipe`, `ingredient`, dan `service`.
+- Kemasan tidak memerlukan jenis atau master terpisah. Kemasan memakai jenis `ingredient` dan kategori `Kemasan`.
+- Produk yang dibeli lalu dijual langsung memakai `standard` dengan pelacakan stok aktif.
+- Produk racikan memakai `recipe`; penjualan mengurangi komponen resep, bukan stok produk racikan.
+- Nilai harga modal tidak menambah stok. Stok hanya berubah melalui stok awal, penerimaan, penjualan, transfer, atau penyesuaian.
 
 Keputusan:
 
@@ -69,51 +80,125 @@ Dashboard tidak menjadi galeri grafik. Setiap bagian harus membantu pengguna men
 
 ## 3. Data Master
 
-| Menu Vireo | Data utama | Keputusan | Lokasi Binyo |
+### 3.1 Keputusan seluruh master data
+
+| Master data | Keputusan | Bentuk di Binyo | Alasan |
 |---|---|---|---|
-| Kategori | Nama, urutan tampil | Keep | Produk > Katalog > Kategori |
-| Grup Produk | Nama grup | Merge | Filter/tag produk; bukan menu utama |
-| Merek | Nama merek | Merge | Field opsional pada produk |
-| Atribut | Atribut dan pilihan | Merge | Pembentuk varian pada produk |
-| Channel | Instore, delivery, web order | Defer | Pengaturan > Integrasi |
-| Grup Modifier | Nama, minimum, maksimum pilihan | Keep | Produk > Modifier |
-| Grup Fasilitas | Nama fasilitas | Remove | Ditambah hanya bila ada alur fasilitas nyata |
-| Produk | Identitas, harga, stok, resep, modifier | Keep | Produk > Katalog |
-| Gerai | Identitas, kontak, pajak, service charge | Keep | Operasional > Outlet |
-| Promo | Periode, hari, cakupan produk | Merge | Produk > Promo sederhana |
-| Pelanggan | Identitas, kontak, membership | Keep | Penjualan > Pelanggan |
-| Kolom Tambahan Pelanggan | Field dinamis pelanggan | Defer | Gunakan field tetap sampai kebutuhan pilot terbukti |
-| Pemasok | Nama, kontak, alamat | Keep | Persediaan > Pemasok |
-| Tipe Pembayaran | Nama, jenis, diskon | Keep | Pengaturan > Metode pembayaran |
-| Grup Harga | Nama grup harga | Merge | Harga per outlet atau channel |
-| Katalog Penukaran Poin | Produk hadiah, poin, periode | Defer | Loyalty setelah pilot |
-| Grup Kupon | Nilai, jenis, periode | Defer | Promo setelah pilot |
-| Komisi | Jenis, nilai, periode | Defer | Bukan kebutuhan kasir inti |
-| Program Loyalti | Periode dan status | Defer | Loyalty setelah pilot |
-| Pengaturan Channel | Channel dan harga toko | Defer | Pengaturan > Integrasi |
-| Tipe Item | Tipe waktu atau timer | Defer | Operasional dapur bila F&B membutuhkannya |
-| Status | Status antrean pesanan | Defer | Operasional dapur bila KDS dibuat |
-| Template Broadcast WhatsApp | Kategori, tipe, subject, status | Remove | Marketing automation bukan MVP |
+| Kategori | Keep | Nama, urutan tampil, status | Dibutuhkan untuk filter dan tampilan; tidak memegang aturan stok |
+| Produk dan pilihan produk | Keep | Identitas, jenis, kode, barcode, harga jual, status | Menjadi pusat hubungan penjualan, resep, pembelian, dan stok |
+| Satuan | Add | `pcs`, `gr`, `kg`, `ml`, `liter`, `botol`, `karton` | Stok, resep, dan pembelian tidak aman tanpa satuan yang jelas |
+| Konversi satuan produk | Add | Contoh `1 botol = 750 ml` | Pembelian memakai kemasan, sedangkan stok dan resep memakai satuan dasar |
+| Pemasok | Keep | Kode, nama, kontak, alamat, status | Diperlukan untuk pembelian dan histori harga |
+| Grup modifier | Keep setelah resep dasar | Pilihan, batas jumlah, tambahan harga, bahan opsional | Modifier dapat mengubah harga dan pemakaian bahan |
+| Outlet | Keep | Identitas, zona waktu, aturan stok minus, status | Saldo dan harga modal dihitung per outlet |
+| Metode pembayaran | Keep | Tunai, kartu manual, transfer, QRIS manual | Diperlukan saat transaksi penjualan dibuat |
+| Pajak dan service charge | Keep sederhana | Profil aktif per bisnis atau outlet | Diperlukan untuk total penjualan; tidak dicampur dengan harga modal |
+| Alasan koreksi stok | Add sebagai daftar tetap | Rusak, kedaluwarsa, terbuang, hasil opname, pemakaian internal, lainnya | Audit harus konsisten; menu master terpisah belum diperlukan |
+| Pelanggan | Keep minimum | Nama dan kontak opsional | Berguna untuk histori; tidak menghalangi penjualan tanpa pelanggan |
+| Atribut | Merge | Menjadi pilihan produk, misalnya ukuran | Menghindari master terpisah yang menggandakan konsep pilihan produk |
+| Grup produk atau tag | Defer | Tambah hanya bila satu produk perlu beberapa kelompok laporan | Kategori sudah cukup untuk pilot kedai kopi |
+| Merek | Defer | Field atau master ditambahkan bila pelaporan membutuhkannya | Tidak memengaruhi penjualan, resep, atau stok pilot |
+| Grup harga | Defer | Harga per outlet sudah tersedia | Master tambahan membuat aturan harga tumpang tindih |
+| Promo dan kupon | Defer | Setelah penjualan dasar stabil | Tidak boleh mendahului transaksi, refund, dan laporan dasar |
+| Channel dan integrasi | Defer | Setelah target GrabFood, GoFood, atau web order dipilih | Harga dan mapping channel belum dibutuhkan pilot |
+| Loyalty, poin, deposito | Defer | Setelah kebutuhan bisnis terukur | Menambah ledger dan risiko rekonsiliasi baru |
+| Komisi | Defer | Setelah aturan komisi disetujui | Bukan kebutuhan kasir, stok, atau pembelian inti |
+| Tipe item dan status dapur | Defer | Tambah bersama KDS | Tidak diperlukan sebelum alur dapur nyata dipilih |
+| Grup fasilitas | Remove | Tidak dibuat | Tidak ada alur reservasi atau fasilitas pada scope Binyo |
+| Template broadcast WhatsApp | Remove | Tidak dibuat | Marketing automation bukan fungsi POS inti |
+| Gudang atau lokasi stok terpisah | Remove dari MVP | Satu saldo per produk dan outlet | Pilot tidak membutuhkan bin atau gudang di dalam outlet |
 
-### Produk
+### 3.2 Fakta kategori Vireo
 
-Vireo memisahkan produk ke tab `Utama`, `Komponen`, dan `Modifier`.
+Halaman kategori Vireo yang diperiksa hanya menampilkan `Nama` dan `Urutan Tampilan`. Kategori `Bahan Baku` adalah nama kategori milik tenant, bukan tipe sistem khusus dan bukan bukti adanya field `indikator bahan baku`.
 
-Field yang ditemukan:
+Vireo tampaknya menentukan perilaku melalui pengaturan produk seperti manajemen stok, manajemen penjualan, serta tab `Komponen`. Binyo tidak menyalin ketergantungan pada nama kategori.
 
-- Produk induk, nama, kategori, grup produk, merek, kode, satuan, deskripsi, dan gambar.
-- Ketersediaan per gerai.
-- Pelacakan stok, larangan stok minus, nomor seri, HPP, dan stok minimum.
-- Harga jual, pajak, favorit, serta urutan tampil pada POS.
-- Komponen resep: produk komponen, jumlah, satuan, harga, dan persentase kontribusi.
-- Modifier.
+Contoh kategori Binyo tetap boleh memakai nama berikut:
 
-Penyederhanaan Binyo:
+- `Bahan Baku` untuk susu, kopi, sirup, gula, es, dan bahan makanan.
+- `Kemasan` untuk cup, tutup, sedotan, kotak, dan kantong.
+- `Cold Coffee`, `Hot Coffee`, `Makanan`, atau `Snack` untuk menu jual.
 
-- Satu halaman produk dengan bagian `Info`, `Harga & Outlet`, `Stok`, dan `Resep & Modifier`.
-- Field lanjutan disembunyikan sampai fitur terkait diaktifkan.
-- Produk tanpa pilihan tetap memiliki satu SKU default, tetapi istilah SKU tidak dipaksakan kepada kasir.
-- Tombol HPP menjelaskan sumber biaya dan waktu pembaruan, bukan hanya `Hitung Ulang HPP`.
+Nama tersebut membantu manusia mencari data. Jenis produk tetap menentukan perilaku sistem.
+
+### 3.3 Jenis produk Binyo
+
+| Jenis | Tampil di POS | Dapat dibeli | Pelacakan stok | Saat penjualan selesai | Contoh |
+|---|---|---|---|---|---|
+| `standard` | Ya | Ya bila stok dilacak | Opsional | Kurangi stok produk sendiri bila aktif | Air mineral botol, roti kemasan |
+| `recipe` | Ya | Tidak langsung | Produk jadi tidak dilacak pada MVP | Kurangi setiap komponen resep | Ice Coffee Lite |
+| `ingredient` | Tidak | Ya | Wajib | Tidak dijual langsung; berkurang melalui resep atau koreksi | Susu UHT, biji kopi, cup |
+| `service` | Ya | Tidak | Tidak | Tidak mengubah stok | Biaya layanan khusus |
+
+Aturan tambahan:
+
+- `outlet_products.is_available` menentukan apakah produk jual tersedia pada outlet; field ini bukan pengganti jenis produk.
+- `track_stock` tetap diperlukan untuk `standard`. Nilainya selalu aktif untuk `ingredient` dan selalu nonaktif untuk `recipe` serta `service`.
+- Semua item berstok boleh menjadi komponen resep. Air mineral botol dapat dijual langsung sekaligus dipakai oleh resep bila memang proses bisnis memerlukannya.
+- Produk setengah jadi atau batch, misalnya sirup racikan yang diproduksi lebih dulu, ditunda. Tambahkan alur produksi hanya ketika stok hasil produksi benar-benar dihitung terpisah.
+
+### 3.4 Status master data Binyo saat ini
+
+| Area | Status saat ini | Batas yang ditemukan |
+|---|---|---|
+| Kategori | Tersedia dan dapat dibuat/diubah | Hanya nama, urutan tampil, dan status; tidak ada hapus permanen |
+| Produk dan pilihan | Tersedia dan dapat dibuat/diubah | Semua produk baru dipaksa menjadi `standard` |
+| Kode, barcode, harga jual | Tersedia | Harga jual wajib untuk semua jenis karena jenis produk belum dapat dipilih |
+| Harga jual dan ketersediaan outlet | Tersedia | Berlaku untuk produk jual |
+| Harga modal manual | Tersedia pada form pilihan produk | Belum terkait jumlah stok, penerimaan, atau outlet sehingga belum menjadi harga modal berjalan |
+| `product_type` | Kolom database tersedia | Tidak dikirim ke daftar/form dan selalu diisi `standard` oleh controller |
+| `track_stock` | Kolom database dan payload tersedia | Tidak ada kontrol yang terlihat pada UI katalog; nilai baru tetap `false` |
+| Outlet | Tersedia dan dapat dibuat/diubah | Sudah memiliki aturan stok minus, tetapi belum ada ledger stok |
+| Staff dan perangkat | Tampil sebagai daftar | Belum ada route pengelolaan pada halaman operasional saat ini |
+| Peran, izin, laci kas | Tersedia pada database/seeder | Belum menjadi master yang dikelola lengkap melalui UI |
+| Satuan, pemasok, resep, modifier | Belum tersedia | Belum ada tabel, route, controller, atau UI operasional |
+| Pembelian, penerimaan, saldo, pergerakan stok | Belum tersedia | Penanda stok pada katalog belum menghasilkan jumlah atau histori stok |
+| Penjualan dan pemotongan bahan | Belum tersedia | Belum ada transaksi yang dapat mengurangi produk atau komponen resep |
+
+Route mutasi yang tersedia saat audit hanya kategori, produk, dan outlet. Data lain tidak boleh dianggap sudah berjalan hanya karena rancangan tabelnya terdapat pada dokumentasi.
+
+### 3.5 Kolom dan struktur yang dipertahankan
+
+| Struktur | Keputusan | Alasan |
+|---|---|---|
+| `products.category_id` | Pertahankan | Filter dan tampilan katalog |
+| `products.product_type` | Pertahankan dan tampilkan di form | Satu pilihan terkontrol lebih aman daripada banyak checkbox perilaku |
+| `product_variants.sku` dan `barcode` | Pertahankan | Identitas pembelian, penjualan, dan integrasi scanner |
+| `product_variants.sell_price` | Pertahankan untuk produk jual | Harga jual bukan harga modal |
+| `product_variants.track_stock` | Pertahankan dengan aturan per jenis | Produk standar dapat dijual tanpa stok; bahan selalu dilacak |
+| `outlet_products.is_available` | Pertahankan untuk produk jual | Ketersediaan dapat berbeda per outlet |
+| `outlet_products.price_override` | Pertahankan | Harga jual dapat berbeda per outlet tanpa grup harga |
+| Status aktif/nonaktif | Pertahankan | Menghentikan penggunaan tanpa menghapus histori |
+
+### 3.6 Kolom dan struktur yang perlu ditambah
+
+| Struktur | Isi minimum | Alasan |
+|---|---|---|
+| `product_variants.base_unit_id` | Satuan dasar pilihan produk | Semua stok, resep, dan harga modal membutuhkan satu sumber satuan |
+| `units` | Kode, nama, jenis ukuran, presisi, status | Menyamakan `ml`, `gr`, dan `pcs` tanpa teks bebas |
+| `product_units` | Satuan, faktor ke satuan dasar, penanda satuan beli | Menyimpan `1 botol = 750 ml` atau `1 karton = 12 pcs` |
+| `recipe_components` | Produk resep, komponen, jumlah dalam satuan dasar | Dasar pemotongan bahan dan perhitungan harga modal menu |
+| `suppliers` | Kode, nama, kontak, alamat, status | Pembelian dan histori pemasok |
+| `purchase_orders` dan baris | Pemasok, outlet, item, satuan beli, jumlah, harga | Memisahkan pesanan dari stok yang benar-benar diterima |
+| `goods_receipts` dan baris | Jumlah diterima, konversi, biaya per satuan dasar | Hanya penerimaan yang menambah stok dan memperbarui harga modal |
+| `stock_movements` | Jenis, perubahan jumlah, biaya, sumber, alasan | Sumber kebenaran dan audit semua perubahan stok |
+| `inventory_balances` | Jumlah dan harga modal rata-rata per pilihan produk/outlet | Membaca saldo cepat tanpa menjumlah seluruh histori setiap kali |
+| `outlet_products.low_stock_threshold` | Batas stok minimum opsional | Peringatan stok harus spesifik per outlet |
+| Snapshot harga modal pada baris penjualan | Harga modal saat transaksi selesai | Laporan lama tidak berubah ketika pembelian atau resep berubah |
+
+### 3.7 Yang dipindah, dihilangkan, atau tidak ditambah
+
+| Keputusan | Alasan |
+|---|---|
+| Pindahkan `default_purchase_cost` dari form produk ke alur `Stok awal` sebagai `Harga modal awal` | Harga tanpa jumlah dan outlet tidak membentuk nilai stok; harga modal berjalan berasal dari penerimaan |
+| Hapus `default_purchase_cost` dari model target setelah migrasi data selesai | Harga modal rata-rata harus per outlet dan tersimpan pada saldo/pergerakan, bukan global pada pilihan produk |
+| Jangan tambah `is_raw_material` pada kategori | Memindahkan atau mengganti nama kategori tidak boleh mengubah perilaku stok |
+| Jangan tambah checkbox `is_sellable`, `is_purchasable`, dan `is_recipe` terpisah | Kombinasi boolean mudah menghasilkan kondisi tidak valid; `product_type` sudah cukup |
+| Jangan buat master `Kemasan` terpisah | Cup dan kotak memiliki perilaku stok yang sama dengan bahan lain |
+| Jangan buat menu stok masuk dan stok keluar terpisah | Satu alur penyesuaian dengan jumlah, arah, dan alasan lebih mudah diaudit |
+| Jangan buat menu penerimaan terpisah dari pembelian | Penerimaan adalah tahap dari dokumen pembelian yang sama |
+| Jangan tambah merek, grup produk, grup harga, gudang, lot, serial, atau kedaluwarsa pada MVP | Belum ada kebutuhan pilot yang membenarkan data dan alur tambahan |
 
 ## 4. Transaksi dan Persediaan
 
@@ -147,7 +232,7 @@ Binyo memakai alur lebih pendek:
 3. Periksa total lalu simpan draft atau pesan.
 4. Terima seluruh atau sebagian barang dari dokumen yang sama.
 
-MVP tidak memiliki rantai approval terpisah. Izin `purchase_order.post` membatasi siapa yang boleh mengubah draft menjadi `Dipesan`. Approval berdasarkan nominal ditambahkan hanya bila pilot membutuhkannya.
+MVP tidak memiliki rantai persetujuan terpisah. Izin `purchase_order.post` membatasi siapa yang boleh mengubah draft menjadi `Dipesan`. Persetujuan berdasarkan nominal ditambahkan hanya bila pilot membutuhkannya.
 
 ### Transfer
 
@@ -159,6 +244,72 @@ Draft -> Dikirim -> Diterima sebagian -> Selesai
 ```
 
 Stok sumber berkurang saat `Dikirim`. Stok tujuan bertambah saat `Diterima`. Selisih wajib memiliki alasan dan jejak audit.
+
+### Alur bahan baku sampai produk terjual
+
+1. Buat bahan sebagai `ingredient`, pilih kategori, dan tentukan satuan dasar. Contoh: Dripp Palm Sugar memakai `ml`.
+2. Tambahkan satuan beli pada bahan. Contoh: `1 botol = 750 ml`.
+3. Buat pemasok dan draft pembelian untuk outlet tujuan. Draft belum mengubah stok.
+4. Terima barang seluruh atau sebagian. Penerimaan `1 botol` menambah `750 ml`, membuat pergerakan stok, dan menghitung harga modal rata-rata outlet.
+5. Buat menu sebagai `recipe`, lalu isi komponen dalam satuan dasar. Contoh Ice Coffee Lite memakai Dripp Palm Sugar `20 ml` dan Gelas plastik `1 pcs`.
+6. Saat penjualan selesai, sistem membuat pengurangan untuk setiap komponen resep dan menyimpan harga modal transaksi.
+7. Kartu stok membaca pergerakan; laporan laba membaca harga jual bersih dikurangi snapshot harga modal transaksi.
+
+### Alur per jenis item
+
+| Kasus | Master yang dipakai | Saat pembelian | Saat penjualan |
+|---|---|---|---|
+| Bahan minuman atau makanan | `ingredient`, satuan, pemasok | Penerimaan menambah stok bahan | Berkurang melalui resep |
+| Kemasan | `ingredient`, kategori `Kemasan`, satuan `pcs` | Penerimaan menambah stok kemasan | Berkurang sebagai komponen resep |
+| Barang jual langsung | `standard` dengan stok aktif | Penerimaan menambah stok produk | Stok produk sendiri berkurang |
+| Menu racikan | `recipe` dan komponen | Tidak dibeli sebagai produk jadi | Seluruh komponen berkurang |
+| Jasa atau biaya non-stok | `service` | Tidak ada penerimaan | Tidak mengubah stok |
+
+### Aturan koreksi yang menutup gap operasional
+
+- Stok awal wajib mencatat outlet, jumlah, satuan dasar, dan harga modal awal dalam satu tindakan.
+- Stok rusak, kedaluwarsa, terbuang, atau dipakai internal memakai penyesuaian keluar dengan alasan dan catatan.
+- Opname menyimpan jumlah sistem, jumlah fisik, selisih, penghitung, dan waktu pencatatan; hanya selisih yang membuat pergerakan.
+- Void sebelum transaksi selesai tidak membuat pemakaian bahan final.
+- Refund produk racikan tidak otomatis mengembalikan bahan karena minuman atau makanan biasanya sudah dibuat.
+- Refund barang standar hanya menambah stok bila barang fisik benar-benar kembali dan layak dijual.
+- Dokumen penerimaan, pergerakan stok, dan transaksi selesai tidak dihapus. Koreksi memakai pembalikan yang menunjuk record asal.
+- Resep tidak boleh berisi dirinya sendiri atau membentuk siklus antarproduk.
+- Stok minus ditolak secara default. Pengecualian harus mengikuti pengaturan outlet dan masuk daftar rekonsiliasi.
+
+### Gap register Binyo
+
+| Prioritas | Gap | Dampak bila belum ada | Penutup gap |
+|---|---|---|---|
+| P0 | Jenis produk belum dapat dipilih | Bahan dan menu jual tidak dapat dibedakan dengan aman | Aktifkan `product_type` dengan empat pilihan dan validasi kombinasi |
+| P0 | Satuan dasar dan konversi belum ada | Pembelian botol tidak dapat menjadi stok `ml`; resep tidak presisi | Tambah `units`, `base_unit_id`, dan `product_units` |
+| P0 | Stok awal belum ada | Harga modal manual tidak menghasilkan jumlah atau nilai stok | Catat stok awal per outlet |
+| P0 | Ledger dan saldo stok belum ada | Tidak ada sumber kebenaran, kartu stok, atau kontrol stok minus | Tambah `stock_movements` dan `inventory_balances` |
+| P0 | Pemasok, pembelian, penerimaan belum ada | Stok masuk dan harga modal tidak dapat diaudit | Buat pemasok, pembelian, dan penerimaan sebagian |
+| P0 | Resep belum ada | Penjualan menu tidak dapat mengurangi bahan | Tambah komponen resep dan validasi satuan/siklus |
+| P0 | Penjualan belum ada | Belum ada titik pemotongan stok atau snapshot harga modal | Buat transaksi selesai yang mencatat stok secara idempoten |
+| P1 | Opname dan penyesuaian belum ada | Selisih fisik, rusak, dan terbuang tidak tercatat benar | Buat opname dan koreksi beralasan |
+| P1 | Refund dan void belum terhubung stok | Stok dapat kembali padahal bahan sudah terpakai | Terapkan kebijakan per jenis produk dan kondisi barang |
+| P1 | Peringatan stok minimum belum ada | Pembelian terlambat | Tambah batas minimum per outlet dan daftar tindakan |
+| P1 | Laporan stok, pembelian, dan laba belum ada | Owner tidak dapat memeriksa hasil alur | Bangun laporan dari ledger dan snapshot, bukan hitung ulang histori |
+| P2 | Modifier yang memakai bahan belum ada | Topping atau tambahan tidak mengurangi stok | Hubungkan modifier ke komponen setelah resep dasar stabil |
+| P2 | Transfer antar-outlet belum ada | Multi-outlet tidak dapat memindahkan stok dengan audit | Buat satu dokumen berstatus kirim/terima |
+| Deferred | Produksi batch atau setengah jadi | Sirup racikan yang disimpan tidak dapat dihitung sebagai stok hasil | Tambah produksi saat proses nyata membutuhkan stok hasil terpisah |
+| Deferred | Lot, kedaluwarsa, dan nomor seri | Tidak ada pelacakan per batch | Tambah bila volume, regulasi, atau risiko bahan membuktikan kebutuhan |
+
+Gap P0 adalah rantai minimum yang harus selesai bersama. Membuat hanya form bahan, pembelian, atau resep tanpa ledger dan penjualan akan menghasilkan data yang terlihat lengkap tetapi tidak mengubah stok dengan benar.
+
+### Urutan pengembangan yang aman
+
+1. Klasifikasi produk, satuan dasar, konversi, dan stok awal.
+2. Ledger stok, saldo per outlet, serta kartu stok minimum.
+3. Pemasok, pembelian, dan penerimaan barang.
+4. Resep dan harga modal menu.
+5. Penjualan dengan pengurangan stok serta snapshot harga modal.
+6. Opname, penyesuaian, refund/void, dan laporan dasar.
+7. Modifier stok dan transfer multi-outlet.
+
+Setiap tahap harus memakai data tahap sebelumnya. Tidak ada modul yang boleh membuat saldo stok dengan menulis langsung ke `inventory_balances`; semua perubahan wajib membuat `stock_movements`.
 
 ## 5. Laporan
 
@@ -196,10 +347,10 @@ Vireo menyediakan laba per produk dan laba per hari. Binyo menggabungkannya menj
 Laporan wajib membedakan:
 
 - Penjualan produk setelah diskon, tidak termasuk pajak dan service charge.
-- HPP yang diambil dari snapshot transaksi.
+- Harga modal yang diambil dari snapshot transaksi.
 - Laba kotor.
 - Margin laba kotor.
-- Baris dengan HPP belum tersedia atau masih perkiraan.
+- Baris dengan harga modal belum tersedia atau masih perkiraan.
 
 ### Laporan lainnya
 
@@ -207,7 +358,7 @@ Laporan wajib membedakan:
 |---|---|
 | Rekapitulasi Kas | Keep sebagai Laporan Shift & Kas |
 | Diskon | Merge ke laporan penjualan |
-| Harga Pokok Penjualan | Keep sebagai rincian HPP |
+| Harga Pokok Penjualan | Keep sebagai rincian harga modal |
 | Modifier | Merge ke laporan produk |
 | Pajak | Keep sebagai Laporan Pajak & Biaya |
 | Komisi | Defer |
@@ -223,12 +374,12 @@ Laporan wajib membedakan:
 | Kas Masuk/Kas Keluar | Keep sebagai Laporan Shift & Kas |
 | Sisa Kredit Kasbon | Defer |
 
-## 6. HPP dan Laba
+## 6. Harga Modal dan Laba
 
 ### Fakta yang diamati pada Vireo
 
 - Bahan baku dapat memakai satuan dasar kecil, misalnya `ml`, `gr`, atau `pcs`.
-- HPP bahan disimpan per satuan dasar.
+- Harga modal bahan ditampilkan per satuan dasar.
 - Komponen resep memiliki jumlah, satuan, harga, dan persentase kontribusi.
 - Produk resep menampilkan total harga komponen.
 - Tersedia tombol `Hitung Ulang HPP`.
@@ -237,16 +388,16 @@ Laporan wajib membedakan:
 
 Belum dapat dipastikan dari UI:
 
-- Waktu tepat HPP bahan diperbarui.
+- Waktu tepat harga modal bahan diperbarui.
 - Aturan pembulatan internal.
 - Perlakuan transaksi lama setelah tombol hitung ulang digunakan.
 - Penyebab persentase komponen tertentu tidak selalu berjumlah tepat 100 persen.
 
-### Aturan HPP Binyo
+### Aturan Harga Modal Binyo
 
 #### Satuan
 
-Setiap SKU memiliki satu `base_unit` sebagai sumber kebenaran stok dan resep. Satuan beli dikonversi saat penerimaan. Biaya rata-rata disimpan per SKU dan outlet.
+Setiap pilihan produk memiliki satu satuan dasar sebagai sumber kebenaran stok dan resep. Satuan beli dikonversi saat penerimaan. Harga modal rata-rata disimpan per pilihan produk dan outlet.
 
 Contoh:
 
@@ -255,9 +406,9 @@ Contoh:
 1 liter = 1.000 ml
 ```
 
-Faktor konversi disimpan sebagai snapshot pada baris penerimaan agar perubahan master tidak mengubah histori.
+Faktor konversi disalin ke baris penerimaan agar perubahan master tidak mengubah histori.
 
-Jumlah dan biaya per base unit memakai fixed decimal. Total dokumen dibulatkan ke rupiah saat posting agar biaya kecil per `ml` atau `gr` tidak hilang.
+Jumlah dan biaya per satuan dasar memakai angka desimal tetap. Total dokumen dibulatkan ke rupiah saat dicatat agar biaya kecil per `ml` atau `gr` tidak hilang.
 
 #### Biaya penerimaan
 
@@ -266,7 +417,7 @@ base_quantity_received = purchase_quantity x conversion_factor
 receipt_cost_per_base_unit = (line_cost + allocated_additional_cost) / base_quantity_received
 ```
 
-Biaya tambahan bernilai nol pada MVP bila landed cost belum diaktifkan.
+Biaya tambahan bernilai nol pada MVP bila alokasi ongkos pembelian belum diaktifkan.
 
 #### Rata-rata bergerak
 
@@ -285,31 +436,31 @@ Rumus berlaku saat stok sebelum penerimaan tidak negatif. Jika stok sebelumnya n
 recipe_cost = sum(component_quantity_in_base_unit x component_average_cost_at_outlet)
 ```
 
-Modifier yang mengonsumsi bahan menambah biaya komponennya. Kemasan dapat dimodelkan sebagai komponen resep agar HPP terlihat dan stoknya terlacak.
+Modifier yang mengonsumsi bahan menambah biaya komponennya. Kemasan dapat dimodelkan sebagai komponen resep agar harga modal terlihat dan stoknya terlacak.
 
 #### Saat penjualan
 
-- HPP produk atau resep disalin ke `sale_lines.unit_cost` saat transaksi selesai.
+- Harga modal produk atau resep disalin ke `sale_lines.unit_cost` saat transaksi selesai.
 - Transaksi lama tidak berubah saat harga beli atau resep berikutnya berubah.
 - `gross_profit = net_product_sales - cost_of_goods_sold`.
 - Pajak dan service charge tidak masuk `net_product_sales`; keduanya dilaporkan terpisah.
 
 #### Kondisi khusus
 
-- Opening stock wajib memiliki jumlah dan biaya awal.
+- Stok awal wajib memiliki jumlah dan harga modal awal.
 - Produk dengan stok terlacak dilarang minus secara default.
-- Jika bisnis mengizinkan stok minus, penjualan memakai rata-rata biaya terakhir dan diberi status HPP perkiraan.
+- Jika bisnis mengizinkan stok minus, penjualan memakai rata-rata biaya terakhir dan diberi status harga modal perkiraan.
 - Transfer membawa snapshot biaya dari outlet sumber dan memperbarui rata-rata outlet tujuan.
-- Refund memakai snapshot HPP dari transaksi asal.
-- Penerimaan atau penyesuaian yang sudah diposting tidak diedit langsung; koreksi memakai reversal.
-- HPP kosong atau nol selalu tampil sebagai peringatan pada laporan laba.
+- Refund memakai snapshot harga modal dari transaksi asal.
+- Penerimaan atau penyesuaian yang sudah dicatat tidak diedit langsung; koreksi memakai pembalikan.
+- Harga modal kosong atau nol selalu tampil sebagai peringatan pada laporan laba.
 
-### UI HPP Binyo
+### UI Harga Modal Binyo
 
 Pada produk tampilkan:
 
-- HPP saat ini.
-- Sumber terakhir: opening stock, penerimaan, produksi, atau perhitungan resep.
+- Harga modal saat ini.
+- Sumber terakhir: stok awal, penerimaan, produksi, atau perhitungan resep.
 - Waktu pembaruan.
 - Rincian kontribusi komponen.
 - Simulasi dampak perubahan resep sebelum disimpan.
@@ -321,13 +472,13 @@ Pada produk tampilkan:
 - `Akun Buku Besar`: kode, nama, tipe akun, parent, dan izin jurnal manual.
 - `Buat Jurnal`: nomor jurnal, tanggal, akun, referensi dokumen, kasir, keterangan, debit, dan kredit.
 - `Laporan Akunting`: neraca dan laba rugi, neraca bulanan, serta laporan jurnal.
-- Penjualan otomatis membentuk jurnal kas atau metode pembayaran, penjualan, HPP, dan persediaan.
+- Penjualan otomatis membentuk jurnal kas atau metode pembayaran, penjualan, biaya barang terjual, dan persediaan.
 
 ### Keputusan Binyo
 
 General ledger lengkap bukan MVP. Binyo tetap menyimpan event dan snapshot yang cukup untuk rekonsiliasi serta ekspor.
 
-- `Laporan > Ekspor Akunting` menyediakan penjualan, pajak, service charge, pembayaran, HPP, persediaan, refund, dan pergerakan kas.
+- `Laporan > Ekspor Akunting` menyediakan penjualan, pajak, service charge, pembayaran, harga modal, persediaan, refund, dan pergerakan kas.
 - Mapping chart of accounts ditambahkan setelah target integrasi dipilih.
 - Jurnal manual, neraca, dan laba rugi ditunda agar Binyo tidak menjadi ERP setengah jadi.
 

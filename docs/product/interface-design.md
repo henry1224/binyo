@@ -175,7 +175,7 @@ Pada layar sempit, detail menjadi halaman penuh dengan tombol kembali yang mempe
 +-------------------------------------------------------------------------------+
 | Laba kotor                         1–28 Oktober        [Semua outlet v] [CSV] |
 |-------------------------------------------------------------------------------|
-| Outlet       Penjualan bersih     HPP          Laba kotor      Margin         |
+| Outlet       Penjualan bersih     Harga modal  Laba kotor      Margin         |
 | Kedai Utama  Rp82.400.000          Rp31.200.000 Rp51.200.000    62,1%          |
 | Kedai Timur  Rp61.800.000          Rp25.700.000 Rp36.100.000    58,4%          |
 |-------------------------------------------------------------------------------|

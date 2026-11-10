@@ -123,7 +123,7 @@ Satu cash drawer hanya boleh memiliki satu shift `open` atau `closing_pending_sy
 
 - `id`, `business_id`, `category_id`
 - `name`, `description`, `image_path`
-- `product_type`: `standard` atau `recipe`
+- `product_type`: `standard`, `recipe`, `ingredient`, atau `service`
 - `tax_profile_id`
 - `status`, `display_order`
 
@@ -132,11 +132,24 @@ Satu cash drawer hanya boleh memiliki satu shift `open` atau `closing_pending_sy
 - `id`, `business_id`, `product_id`
 - `sku`, `barcode`, `name`
 - `base_unit_id`
-- `sell_price`, `default_purchase_cost`
+- `sell_price`
 - `track_stock`
 - `is_default`, `status`
 
 Produk tanpa pilihan memiliki satu varian default. Semua baris penjualan menunjuk varian, bukan langsung ke produk.
+
+Perilaku jenis produk:
+
+- `standard`: dijual langsung; stok produk sendiri dapat dilacak.
+- `recipe`: dijual langsung; stok berkurang pada komponen resep.
+- `ingredient`: dibeli dan dilacak stoknya, tetapi tidak tampil pada POS.
+- `service`: dijual tanpa pembelian atau perubahan stok.
+
+Kategori hanya untuk pengelompokan. Kemasan memakai `ingredient` dengan kategori `Kemasan`; tidak ada field `is_raw_material` pada kategori.
+
+Harga jual wajib hanya untuk `standard`, `recipe`, dan `service`. `track_stock` selalu aktif untuk `ingredient`, selalu nonaktif untuk `recipe` dan `service`, serta dapat dipilih untuk `standard`.
+
+Kolom implementasi awal `default_purchase_cost` bukan sumber kebenaran model target. Harga modal awal dicatat bersama jumlah stok awal per outlet, sedangkan harga modal berjalan berasal dari penerimaan dan tersimpan pada saldo serta pergerakan stok.
 
 ### units dan product_units
 
@@ -178,7 +191,7 @@ Grup menyimpan nama, minimum, maksimum, dan apakah wajib. Opsi menyimpan nama, t
 - `component_variant_id`
 - `quantity_in_base_unit`
 
-Resep selalu disimpan dalam base unit komponen. HPP resep per outlet dihitung dari jumlah komponen dikali `inventory_balances.average_cost` komponen pada outlet tersebut. Modifier yang mengonsumsi stok memakai aturan yang sama.
+Resep selalu disimpan dalam base unit komponen. Harga modal resep per outlet dihitung dari jumlah komponen dikali `inventory_balances.average_cost` komponen pada outlet tersebut. Komponen dapat berupa `ingredient` atau produk `standard` yang stoknya dilacak. Resep tidak boleh menunjuk dirinya sendiri atau membentuk siklus. Modifier yang mengonsumsi stok memakai aturan yang sama.
 
 ## 5. Penjualan
 
@@ -317,7 +330,7 @@ Aturan biaya pergerakan:
 - Penyesuaian stok keluar memakai biaya rata-rata saat posting.
 - Penyesuaian stok masuk memakai biaya rata-rata saat posting atau biaya eksplisit untuk opening stock.
 - Jika stok sebelum penerimaan nol, biaya rata-rata baru sama dengan biaya penerimaan.
-- Jika `outlets.prevent_negative_stock` dinonaktifkan, penjualan boleh membuat saldo negatif, memakai biaya terakhir sebagai perkiraan, dan ditandai untuk rekonsiliasi. Penerimaan berikutnya tidak menulis ulang HPP transaksi lama.
+- Jika `outlets.prevent_negative_stock` dinonaktifkan, penjualan boleh membuat saldo negatif, memakai biaya terakhir sebagai perkiraan, dan ditandai untuk rekonsiliasi. Penerimaan berikutnya tidak menulis ulang harga modal transaksi lama.
 
 ### stock_counts dan stock_count_lines
 
@@ -451,7 +464,7 @@ Payload replica boleh memuat:
 Payload replica tidak boleh memuat:
 
 - Identitas atau kontak pelanggan.
-- HPP, laba, dan biaya internal.
+- Harga modal, laba, dan biaya internal.
 - PIN, password, token, atau kredensial.
 - Referensi pembayaran sensitif dan catatan internal.
 

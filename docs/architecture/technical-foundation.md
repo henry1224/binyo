@@ -3,7 +3,7 @@ title: "Fondasi Teknis"
 subtitle: "Batas sistem, API, sinkronisasi, keamanan, dan operasi"
 author: "Binyo POS"
 date: "2026-10-29"
-status: "Diputuskan, implementasi M1 berjalan"
+status: "Diputuskan, fondasi M1 tersedia"
 ---
 
 # Fondasi Teknis
@@ -38,7 +38,7 @@ Modular monolith cukup untuk MVP. Microservice menambah deployment, transaksi te
 
 Flutter 3.47 mendukung Android API 24-37. Binyo menargetkan perangkat baru Android 13+; perangkat Android 11-12 hanya diterima bila masih mendapat patch vendor. Keputusan Flutter tetap harus divalidasi memakai printer, scanner, dan cash drawer target karena dukungan hardware nyata lebih penting daripada preferensi framework.
 
-Implementasi M1 dimulai pada `apps/backoffice` memakai Laravel 13, Inertia 3, Vue 3, TypeScript, dan PostgreSQL. POS Flutter dimulai setelah kontrak autentikasi pengguna, binding perangkat, outlet, dan permission stabil.
+Fondasi M1 tersedia pada `apps/backoffice` memakai Laravel 13, Inertia 3, Vue 3, TypeScript, dan PostgreSQL. POS Flutter dimulai pada M4 setelah autentikasi, binding perangkat, izin, jenis produk, stok, pembelian, dan resep stabil.
 
 ## 3. Batas modul backend
 
@@ -120,7 +120,7 @@ Nama endpoint final mengikuti konvensi proyek. Daftar ini menetapkan kemampuan, 
 - Perubahan switch replica wajib diaudit dengan outlet, pelaku, nilai sebelum/sesudah, alasan, dan waktu.
 - Kredensial replica tidak tersedia pada POS, browser, atau proses laporan resmi.
 - Worker replica hanya memiliki hak baca/update pada outbox utama dan hak tulis terbatas pada database replica; database replica tidak memiliki akses balik ke database utama.
-- Payload replica memakai whitelist tetap dan tidak memuat identitas pelanggan, HPP, laba, token, PIN, atau catatan internal.
+- Payload replica memakai whitelist tetap dan tidak memuat identitas pelanggan, harga modal, laba, token, PIN, atau catatan internal.
 - Binyo tidak menyimpan PAN kartu, CVV, atau kredensial pembayaran pelanggan.
 - Backup terenkripsi, diuji restore, dan memiliki retensi tertulis.
 
